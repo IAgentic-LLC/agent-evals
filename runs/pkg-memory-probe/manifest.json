@@ -1,0 +1,9 @@
+{
+  "note": "no context, no grounding instruction, system prompt: Answer in one short sentence.",
+  "dataset": "pkg_answers_v1.jsonl",
+  "started_at": "2026-09-20T14:09:29+00:00",
+  "harness": {
+    "commit": "ebc2c42dc56c9b98bcab96b1d4b57524dea4909b",
+    "dirty": false
+  }
+}

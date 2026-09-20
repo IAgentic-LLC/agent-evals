@@ -95,6 +95,12 @@ The reorder product's approval workflow is a two-turn conversation: a question, 
 
 `datasets/pkg_corpus_v1.jsonl` is 107 PyPI packages fetched on 2026-09-20 (`scripts/build_pkg_corpus.py`). `datasets/pkg_queries_v1.jsonl` (50 questions) and `pkg_queries_v2.jsonl` (62: version 1 plus 12 harder questions added after the first results) are built by `scripts/build_pkg_queries.py`, labeled by one person, 16 labels contested; see `datasets/CHANGELOG.md`. `scripts/record_embeddings.py` is the only step that needs a key: it records the summaries and the questions with the product's own client and again with Gemini task types (`runs/pkg-retrieval-1`, `-2`, from a clean commit). On `-2`, 57 answerable questions: a relevant package in the top 3 for 55 (as shipped) and 56 (task types) against 39 for BM25, 48 for the hybrid and 5 for random. Both shipped misses are contested-label questions, but one of them ("start and stop containers") returns no container library in its top 3. With one collection per tenant 0 of 186 results belonged to the other tenant; with a shared collection 103 did. `scripts/plot_retrieval.py` draws the figures. `pkgintel-app` is pinned to `ch33-end`. Qdrant runs in memory, not as a server.
 
+## Chapter 13: grounding, citations and freshness
+
+`src/agent_evals/adapters/pkgintel.py` runs the package-intelligence product's own `ask_rag_agent_for_tenant` with recorded embeddings and the real model (`pkg-live`), and records what was retrieved and which packages the answer cited (`Trace.retrieved`, `Trace.cited`). `src/agent_evals/grounding.py` has plain-code checks: `invalid_citation` (a cited name that was not retrieved), `no_citation`, `outside_name`, `new_number`, and `ignored_context` (a counterfactual answer that lacks the fact added to a summary). `agent-evals grounding grade --run R [R ...] --dataset D --part {summary,bounds,fresh,counterfactual,flagged,readings,refusals}` prints the tables and exits 1 if any answer cites a package that was not retrieved. `agent-evals grounding check` runs a faithful scripted model and six faulty ones, each aimed at one flag, and reports a seventh fault (an unsupported claim with no name and no number) that no check can see.
+
+`datasets/pkg_answers_v1.jsonl` is the 62 retrieval questions plus 10 freshness questions and 5 counterfactual ones (made-up added sentences, test fixtures only); see `datasets/CHANGELOG.md`. Two recorded live passes on `gemini-3.6-flash` (`runs/pkg-answers-1`, `-2`, clean commit): no cited name outside the retrieved three, no outside package names, no numbers the context lacks, and all 10 counterfactual answers follow the edited context. But 29 of 110 answers to answerable questions refuse although a relevant package was retrieved, and my hand reading of all 154 answers (`datasets/pkg_answers_v1.readings.jsonl`, one reader) finds one stretch that no check flagged. `scripts/probe_memory.py` asks the ten version questions with no context: 9 of 10 answers gave a version and only one matched PyPI (`runs/pkg-memory-probe`). `scripts/plot_grounding.py` draws the figures. The product's index stores only names and summaries, so no version can be grounded.
+
 ## Run it
 
 ```bash
@@ -122,7 +128,7 @@ uv run agent-evals run --adapter triage-live --dataset datasets/triage_book3_six
 
 ## What this does not do yet
 
-One trial per ticket or question, three products (each in its own chapters), deterministic graders only. There are no judges, no repeated-trial reliability, no answer-level retrieval evaluation (only the search itself), and no online monitoring. Those arrive in later chapters. The recorded run is a single observation of a stochastic system: rerunning it can give a different trace.
+One trial per ticket or question, three products (each in its own chapters), deterministic graders only. There are no judges, no repeated-trial reliability, no judge for claims the plain-code checks cannot see, and no online monitoring. Those arrive in later chapters. The recorded run is a single observation of a stochastic system: rerunning it can give a different trace.
 
 ## License
 

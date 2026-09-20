@@ -381,7 +381,14 @@ def cmd_grounding_grade(args) -> int:
         "fresh": lambda: grounding.render_fresh(cases, traces),
         "counterfactual": lambda: grounding.render_counterfactual(cases, traces),
     }
-    if args.part == "flagged":
+    if args.part in ("readings", "refusals"):
+        runs = {Path(r).name: read_traces(Path(r) / "traces.jsonl") for r in args.run}
+        if args.part == "refusals":
+            print(grounding.render_refusals(cases, runs), end="")
+        else:
+            readings = grounding.load_readings(args.readings)
+            print(grounding.render_readings(cases, runs, readings, names), end="")
+    elif args.part == "flagged":
         for trace, hits in grounding.flagged(cases, traces, names):
             print(f"{trace.case_id} t{trace.trial}: {', '.join(hits)}")
     else:
@@ -612,9 +619,18 @@ def main(argv: list[str] | None = None) -> int:
     p_gg.add_argument("--dataset", required=True)
     p_gg.add_argument(
         "--part",
-        choices=("summary", "bounds", "fresh", "counterfactual", "flagged"),
+        choices=(
+            "summary",
+            "bounds",
+            "fresh",
+            "counterfactual",
+            "flagged",
+            "readings",
+            "refusals",
+        ),
         default="summary",
     )
+    p_gg.add_argument("--readings", default="datasets/pkg_answers_v1.readings.jsonl")
     p_gg.set_defaults(func=cmd_grounding_grade)
     p_gc = gr_sub.add_parser(
         "check", help="the checks, on a faithful script and six faulty ones"

@@ -4,7 +4,8 @@ Plain code, so the same answer always gets the same verdict. Each check looks at
 way an answer can fail to stand on its context, and none of them reads meaning:
 
 - invalid_citation: the answer cites a package that was not among the retrieved three.
-- no_citation: a relevant package was retrieved, and the answer cites nothing.
+- no_citation: a relevant package was retrieved for an answerable question, and the
+  answer cites nothing.
 - outside_name: the answer names another package in the index that appears neither
   in the question nor in the retrieved text, and is not itself one of the three.
 - new_number: the answer gives a version-like number that appears neither in the
@@ -17,8 +18,10 @@ They find candidates. Whether an answer really goes beyond its context is a read
 task, and the chapter reads a sample by hand to see how far these checks can be trusted.
 """
 
+import json
 import re
 from collections import Counter
+from pathlib import Path
 from typing import Any
 
 from agent_evals.retrieval import hit_at_k
@@ -33,6 +36,8 @@ FLAGS = (
     "ignored_context",
     "error",
 )
+# The flags that say an answer goes beyond its context, as opposed to saying too little.
+BEYOND = ("invalid_citation", "outside_name", "new_number", "ignored_context")
 VERSION = re.compile(r"\b\d+(?:\.\d+)+\b")
 KINDS = ("task", "named", "hard", "none", "fresh", "counterfactual")
 
@@ -57,7 +62,10 @@ def check(case: EvalCase, trace: Trace, names: list[str]) -> dict[str, Any]:
     cited = [c for c in trace.cited if c.strip()]
     found["invalid_citation"] = any(c.casefold() not in known for c in cited)
     relevant = case.expected.get("relevant", [])
-    if relevant and hit_at_k(retrieved, relevant, len(retrieved)):
+    # A freshness question asks for something the summaries cannot hold, so an answer
+    # that cites nothing is the right one and the flag does not apply.
+    answerable = case.slices.get("kind") != "fresh"
+    if relevant and answerable and hit_at_k(retrieved, relevant, len(retrieved)):
         found["no_citation"] = not cited
     context = " ".join(r["summary"] for r in trace.retrieved)
     seen = f"{case.input['query']} {context} {' '.join(retrieved)}"
@@ -187,13 +195,84 @@ def render_counterfactual(cases: dict[str, EvalCase], traces: list[Trace]) -> st
 
 
 def flagged(
-    cases: dict[str, EvalCase], traces: list[Trace], names: list[str]
+    cases: dict[str, EvalCase],
+    traces: list[Trace],
+    names: list[str],
+    flags: tuple[str, ...] = FLAGS,
 ) -> list[tuple[Trace, list[str]]]:
     """Every answer that one of the checks flags, with which ones."""
     out = []
     for trace in traces:
         found = check(cases[trace.case_id], trace, names)
-        hits = [f for f in FLAGS if found[f]]
+        hits = [f for f in flags if found[f]]
         if hits:
             out.append((trace, hits))
     return out
+
+
+def load_readings(path: str | Path) -> list[dict[str, str]]:
+    lines = Path(path).read_text(encoding="utf8").splitlines()
+    return [json.loads(line) for line in lines if line.strip()]
+
+
+def render_readings(
+    cases: dict[str, EvalCase],
+    runs: dict[str, list[Trace]],
+    readings: list[dict[str, str]],
+    names: list[str],
+) -> str:
+    """My hand readings set against what the checks flagged, run by run."""
+    counts = Counter(r["reading"] for r in readings)
+    flagged_keys = {
+        (run, t.case_id)
+        for run, traces in runs.items()
+        for t, _ in flagged(cases, traces, names, BEYOND)
+    }
+    beyond = [r for r in readings if r["reading"] in ("stretch", "unsupported")]
+    lines = [f"Answers read by hand: {len(readings)} ({', '.join(runs)})", ""]
+    for reading in ("supported", "refusal", "stretch", "unsupported"):
+        lines.append(f"  {reading:<12}{counts[reading]:>4}")
+    lines += [
+        "",
+        f"Flagged as going beyond the context: {len(flagged_keys)} of {len(readings)}",
+    ]
+    for r in beyond:
+        caught = (r["run"], r["case_id"]) in flagged_keys
+        lines.append(
+            f"Read as {r['reading']}: {r['run']} {r['case_id']}, "
+            f"flagged by a check: {'yes' if caught else 'no'}"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def render_refusals(cases: dict[str, EvalCase], runs: dict[str, list[Trace]]) -> str:
+    """How often the model declined although a relevant package was in front of it."""
+    lines = [f"{'run':<16}{'refused, relevant retrieved':>30}"]
+    grouped = ("task", "named", "hard")
+    total_k = total_n = 0
+    answered: dict[str, dict[str, bool]] = {}
+    for run, traces in runs.items():
+        k = n = 0
+        for t in traces:
+            case = cases[t.case_id]
+            if case.slices["kind"] not in grouped or t.error:
+                continue
+            answered.setdefault(t.case_id, {})[run] = bool(t.cited)
+            found = check(case, t, [])
+            if found["no_citation"] is not None:
+                n += 1
+                k += bool(found["no_citation"])
+        total_k, total_n = total_k + k, total_n + n
+        lines.append(f"{run:<16}{_rate(k, n):>30}")
+    lines.append(f"{'all runs':<16}{_rate(total_k, total_n):>30}")
+    both = sum(all(v.values()) for v in answered.values())
+    neither = sum(not any(v.values()) for v in answered.values())
+    lines += [
+        "",
+        (
+            f"{len(answered)} questions: answered in every run {both}, "
+            f"refused in every run {neither}, "
+            f"mixed {len(answered) - both - neither}"
+        ),
+    ]
+    return "\n".join(lines) + "\n"

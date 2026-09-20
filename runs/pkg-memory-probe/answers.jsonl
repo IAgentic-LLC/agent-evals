@@ -1,0 +1,20 @@
+{"case_id": "FQ-001", "trial": 1, "package": "requests", "answer": "The latest version of the Python `requests` library is 2.32.3."}
+{"case_id": "FQ-001", "trial": 2, "package": "requests", "answer": "The latest stable version of the Python `requests` library is 2.32.3."}
+{"case_id": "FQ-002", "trial": 1, "package": "httpx", "answer": "The latest stable version of `httpx` is 0.28.1."}
+{"case_id": "FQ-002", "trial": 2, "package": "httpx", "answer": "The latest version of `httpx` is 0.28.1."}
+{"case_id": "FQ-003", "trial": 1, "package": "fastapi", "answer": "As of early 2026, the latest stable version of FastAPI is in the 0.115.x series."}
+{"case_id": "FQ-003", "trial": 2, "package": "fastapi", "answer": "As of early 2026, the latest version of FastAPI is in the 0.115.x series (you can check PyPI for the most recent patch release)."}
+{"case_id": "FQ-004", "trial": 1, "package": "Django", "answer": "The latest stable version of Django is 5.1."}
+{"case_id": "FQ-004", "trial": 2, "package": "Django", "answer": "The latest stable version of Django is 5.1."}
+{"case_id": "FQ-005", "trial": 1, "package": "pandas", "answer": "The latest stable version of pandas is 2.2.2."}
+{"case_id": "FQ-005", "trial": 2, "package": "pandas", "answer": "The latest stable version of pandas is 2.2.2."}
+{"case_id": "FQ-006", "trial": 1, "package": "pydantic", "answer": "The newest release of Pydantic is version 2.10.4."}
+{"case_id": "FQ-006", "trial": 2, "package": "pydantic", "answer": "The newest release series of Pydantic is version 2.10."}
+{"case_id": "FQ-007", "trial": 1, "package": "numpy", "answer": "The newest stable release of NumPy is version 2.2.0."}
+{"case_id": "FQ-007", "trial": 2, "package": "numpy", "answer": "The newest stable release of NumPy is version 2.1.3."}
+{"case_id": "FQ-008", "trial": 1, "package": "scikit-learn", "answer": "The newest stable release of scikit-learn is version 1.6.1."}
+{"case_id": "FQ-008", "trial": 2, "package": "scikit-learn", "answer": "The newest stable release of scikit-learn is version 1.5.2."}
+{"case_id": "FQ-009", "trial": 1, "package": "celery", "answer": "The newest stable release of Celery is version 5.4.0."}
+{"case_id": "FQ-009", "trial": 2, "package": "celery", "answer": "The newest stable release of Celery is version 5.4.0."}
+{"case_id": "FQ-010", "trial": 1, "package": "boto3", "answer": "You can find the newest release of boto3 on its official PyPI page, as it is updated almost daily."}
+{"case_id": "FQ-010", "trial": 2, "package": "boto3", "answer": "Check the official PyPI page for `boto3` (pypi.org/project/boto3) to see the newest release, as it is updated almost daily."}

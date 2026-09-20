@@ -2,6 +2,15 @@
 
 Every published version of a dataset is frozen. A change is a new version with an entry here, never an edit in place.
 
+## pkg_answers_v1 and its readings (2026-09-20)
+
+Made by `scripts/build_pkg_answers.py` for chapter 13. 77 cases: the 62 questions of `pkg_queries_v2` byte for byte (same IDs), then 10 freshness questions (`FQ-001` to `FQ-010`, "what is the latest version of X") and 5 counterfactual questions (`CF-001` to `CF-005`).
+
+- **Freshness:** the expected version is the one PyPI reported on 2026-09-20, kept in `pkg_corpus_v1`. The product's index keeps only a package's name and one-line summary, so no version can come from it.
+- **Counterfactual:** each case carries `input.summary_edits`, a made-up sentence added to one package's summary, and is asked against a copy of the index with the edit. The edits are test fixtures. They are not statements about the real packages (for example, requests is not built on a Rust core).
+- **Readings:** `pkg_answers_v1.readings.jsonl` holds my reading of each of the 154 recorded answers (two runs of 77): refusal, supported, stretch or unsupported. One reader, the author, no second opinion. `scripts/build_readings.py` says how each answer was assigned.
+- Retrieval for two of the freshness questions (pandas, pydantic) does not find the package, because the package name is not embedded.
+
 ## pkg_queries_v2 (2026-09-20)
 
 Made from `pkg_queries_v1` by `scripts/build_pkg_queries.py`. The first 50 questions are byte for byte the version 1 questions, in the same order, with the same IDs. Twelve harder questions were added (`PQ-051` to `PQ-062`, kind `hard`), 62 in all.
