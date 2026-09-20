@@ -1,0 +1,3 @@
+# Dataset files are hashed byte for byte, and recorded runs store those hashes.
+# Git must never change their line endings, on any platform.
+datasets/*.jsonl -text
