@@ -10,7 +10,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from agent_evals import gate as gate_mod
-from agent_evals.manifest import build_manifest, now
+from agent_evals.manifest import build_manifest, harness_state, now
 from agent_evals.runner import (
     dump_json,
     load_cases,
@@ -62,7 +62,7 @@ def cmd_run(args) -> int:
         )
     cases = load_cases(args.dataset)
     adapter = _make_adapter(args.adapter, args.replay)
-    started_at, clock = now(), time.perf_counter()
+    harness, started_at, clock = harness_state(), now(), time.perf_counter()
     traces = asyncio.run(
         run_cases(cases, adapter, trials=args.trials, concurrency=args.concurrency)
     )
@@ -70,6 +70,7 @@ def cmd_run(args) -> int:
     out = Path(args.out)
     write_traces(out / "traces.jsonl", traces)
     manifest = build_manifest(
+        harness=harness,
         adapter=args.adapter,
         dataset=args.dataset,
         cases=len(cases),

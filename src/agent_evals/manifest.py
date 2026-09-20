@@ -29,8 +29,12 @@ def _source(package: str) -> dict[str, Any] | None:
     return info
 
 
-def _harness_state() -> dict[str, Any] | None:
-    """The harness's own commit, and whether the tree had uncommitted changes."""
+def harness_state() -> dict[str, Any] | None:
+    """The harness's own commit, and whether tracked files had uncommitted changes.
+
+    Untracked files do not count: a run writes its own output directory, and that
+    must not make the run look as if it came from modified code.
+    """
 
     def git(*args: str) -> str:
         return subprocess.run(
@@ -40,7 +44,7 @@ def _harness_state() -> dict[str, Any] | None:
     try:
         return {
             "commit": git("rev-parse", "HEAD"),
-            "dirty": bool(git("status", "--porcelain")),
+            "dirty": bool(git("status", "--porcelain", "--untracked-files=no")),
         }
     except (OSError, subprocess.CalledProcessError):
         return None
@@ -58,6 +62,7 @@ def _model_config(path: str = "config/models.yaml") -> dict[str, Any] | None:
 
 def build_manifest(
     *,
+    harness: dict[str, Any] | None,
     adapter: str,
     dataset: str | Path,
     cases: int,
@@ -79,7 +84,7 @@ def build_manifest(
         "concurrency": concurrency,
         "started_at": started_at.astimezone(UTC).isoformat(timespec="seconds"),
         "wall_seconds": round(wall_seconds, 2),
-        "harness": _harness_state(),
+        "harness": harness,
         "packages": {
             "triage-app": _source("triage-app"),
             "reliable-agents-labs": _source("reliable-agents-labs"),

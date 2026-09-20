@@ -106,6 +106,7 @@ async def test_patching_per_run_leaves_the_product_altered_when_runs_overlap():
 
 def test_the_manifest_ties_a_run_to_its_dataset_and_settings():
     manifest = build_manifest(
+        harness={"commit": "abc", "dirty": False},
         adapter="triage-live",
         dataset=DATASET,
         cases=6,
@@ -125,7 +126,7 @@ def test_the_manifest_ties_a_run_to_its_dataset_and_settings():
     triage = manifest["packages"]["triage-app"]
     assert triage["requested_revision"] == "ch35-end"
     assert len(triage["commit"]) == 40
-    assert set(manifest["harness"]) == {"commit", "dirty"}
+    assert manifest["harness"] == {"commit": "abc", "dirty": False}
 
 
 async def test_a_scorecard_from_repeated_trials_says_its_intervals_describe_the_trials():
