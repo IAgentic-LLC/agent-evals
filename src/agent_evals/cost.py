@@ -124,7 +124,8 @@ def render_latency(cases: dict[str, EvalCase], traces: list[Trace]) -> str:
     """Latency of one condition, overall and by how the run ended, with intervals from
     redrawing tickets for the percentiles."""
     lines = [
-        f"{'run ended':<14}{'runs':>6}{'p50 s':>8}{'p95 s':>8}{'p95 interval':>16}"
+        f"{'run ended':<14}{'runs':>6}{'mean s':>8}{'p50 s':>8}{'p95 s':>8}"
+        + f"{'max s':>8}{'p95 interval':>16}"
     ]
     groups = [("all", traces)] + [
         (o, [t for t in traces if outcome(cases[t.case_id], t) == o]) for o in OUTCOMES
@@ -135,8 +136,9 @@ def render_latency(cases: dict[str, EvalCase], traces: list[Trace]) -> str:
             continue
         low, high = latency_interval(group, 0.95)
         lines.append(
-            f"{name:<14}{len(group):>6}{percentile(lat, 0.5):>8.1f}"
-            f"{percentile(lat, 0.95):>8.1f}{f'{low:.1f} to {high:.1f}':>16}"
+            f"{name:<14}{len(group):>6}{sum(lat) / len(lat):>8.1f}"
+            + f"{percentile(lat, 0.5):>8.1f}{percentile(lat, 0.95):>8.1f}"
+            + f"{max(lat):>8.1f}{f'{low:.1f} to {high:.1f}':>16}"
         )
     return "\n".join(lines) + "\n"
 

@@ -239,3 +239,11 @@ def test_the_first_attempt_bill_is_a_floor_because_it_left_thinking_out():
         for label, model, run in cli.COST_RUNS_FIRST
     ]
     assert _flat(cost.render_bill(first, prices).splitlines()[-1]) == "all 504 0.63"
+
+
+def test_the_latency_table_shows_a_tail_the_mean_does_not():
+    cases, _, conditions = _recorded()
+    label, _, traces = conditions[2]
+    assert label == "2.5-flash"
+    row = _flat(cost.render_latency(cases, traces).splitlines()[1])
+    assert row.startswith("all 126 3.1 2.3 6.2 20.0 ")
