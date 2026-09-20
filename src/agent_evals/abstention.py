@@ -110,7 +110,20 @@ def render_paired(
             only_b += rb and not ra
             neither += not ra and not rb
     names = list(runs)
+    flips = []
+    for traces in runs.values():
+        one, two = traces
+        flips.append(
+            sum(
+                answered(a) != answered(b)
+                for a, b in zip(one, two)
+                if should_answer(cases[a.case_id], a)
+            )
+        )
     return (
+        f"Same prompt, first run against second, on the same questions\n"
+        f"  {names[0]:<19}{flips[0]:>4} answers changed\n"
+        f"  {names[1]:<19}{flips[1]:>4} answers changed\n\n"
         f"Trial by trial, on the questions that should be answered\n"
         f"  refused under both prompts      {both:>4}\n"
         f"  refused under {names[0] + ' only':<17}{only_a:>4}\n"
@@ -182,6 +195,30 @@ def render_gate(cases: dict[str, EvalCase], traces: list[Trace]) -> str:
             f"{cutoff:<8.3f}{f'{dc} of {dn}':>14}{f'{dw} of {dy}':>17}"
             f"{f'{tc} of {tn}':>15}{f'{tw} of {ty}':>17}{mark}"
         )
+    return "\n".join(lines) + "\n"
+
+
+def render_caught(cases: dict[str, EvalCase], traces: list[Trace]) -> str:
+    """On the test questions, which kinds a cutoff would decline before any model runs."""
+    chosen = choose_cutoff(cases, traces)
+    cutoffs = (0.60, chosen)
+    rows = ("outside", "none", "fresh", "beyond_summary", "false_premise")
+    rows += ("retrieval miss", "should answer")
+    lines = [
+        f"{'test questions declined by a cutoff':<38}"
+        + "".join(f"{c:>9.3f}" for c in cutoffs)
+    ]
+    for row in rows:
+        cells = []
+        for cutoff in cutoffs:
+            k = n = 0
+            for case, t in _pairs(cases, [traces]):
+                if case.split == "test" and group(case, t) == row:
+                    n += 1
+                    k += _top1(t) < cutoff
+            cells.append(f"{k} of {n}")
+        label = row + (" (wrong)" if row == "should answer" else "")
+        lines.append(f"{label:<38}" + "".join(f"{c:>9}" for c in cells))
     return "\n".join(lines) + "\n"
 
 

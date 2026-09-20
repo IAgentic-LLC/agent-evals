@@ -9,6 +9,7 @@ Every published version of a dataset is frozen. A change is a new version with a
 - **Split:** within each kind the cases alternate `dev`, `test` in file order, 57 and 53. The 72 older questions were all `test` before; this file reassigns them. They had already been read closely in chapters 12 and 13, so `dev` is not a clean set for them.
 - **Caution:** I wrote the 38 new questions after reading the chapter 13 answers, so I knew the model declines well. The labels (what should be declined) come from one person.
 - Embeddings for the new questions are in `runs/pkg-abstain-embeddings`.
+- **Arguable labels:** AB-002 (recognize speech; transformers names audio), AB-005 (barcodes; opencv-python) and AB-017 (install polars; pip was retrieved) could be read as answerable. AB-024 and AB-027 never retrieve the package they name, so declining them is right for a different reason. The file is frozen; a corrected version would be a new one.
 - `triage_forced.readings.jsonl` holds my reading of the 28 triage answers that followed three empty runbook searches (chapter 10): `gap_stated`, `false_action_claim` and `claims_source_it_lacks`. One reader, the author. `scripts/build_forced_readings.py` holds the rubric.
 
 ## pkg_answers_v1 and its readings (2026-09-20)

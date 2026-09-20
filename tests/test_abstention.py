@@ -282,14 +282,58 @@ def test_the_guard_says_what_it_could_not_check_but_claims_sources_it_lacks(
 ):
     found, readings = forced_found
     text = forced.render_readings(found, readings)
-    has(text, "unchanged                      6      0 of 6        2 of 6")
-    has(text, "stall guard                   22     22 of 22       2 of 22")
-    has(text, "10 of 22")
+    has(text, "unchanged 6 0 of 6 2 of 6 0 of 6")
+    has(text, "stall guard 22 22 of 22 4 of 22 9 of 22")
 
 
 def test_the_word_checks_agree_with_my_reading_but_not_perfectly(forced_found):
     found, readings = forced_found
     text = forced.render_proxies(found, readings)
     has(text, "gap_stated                 22       22            0       0")
-    has(text, "false_action_claim          4        5            1       0")
-    has(text, "claims_source_it_lacks     10       10            2       2")
+    has(text, "false_action_claim 6 5 0 1")
+    has(text, "claims_source_it_lacks 9 10 2 1")
+
+
+def test_two_runs_of_the_same_prompt_change_four_answers_each(recorded):
+    cases, runs = recorded
+    has(
+        abstention.render_paired(cases, runs),
+        "shipped prompt 4 answers changed",
+        "permissive prompt 4 answers changed",
+    )
+
+
+def test_the_cutoff_declines_most_but_not_all_of_each_kind_of_test_question(recorded):
+    cases, runs = recorded
+    text = abstention.render_caught(cases, runs["shipped prompt"][0])
+    has(
+        text,
+        "outside 5 of 7 7 of 7",
+        "beyond_summary 1 of 7 4 of 7",
+        "fresh 0 of 5 4 of 5",
+        "should answer (wrong) 0 of 26 8 of 26",
+    )
+
+
+def test_the_cited_signal_and_the_decline_phrase_disagree_only_on_uncited_answers(
+    recorded,
+):
+    import re
+
+    phrase = re.compile(
+        r"does not contain|do not contain|not enough information", re.IGNORECASE
+    )
+    _, runs = recorded
+    counts = {}
+    for name, traces in runs.items():
+        wrong = 0
+        for one in traces:
+            for t in one:
+                said = bool(phrase.search(t.answer))
+                if bool(t.cited) == said:
+                    wrong += 1
+                    assert (
+                        not t.cited
+                    )  # a disagreement is always a decline in other words
+        counts[name] = wrong
+    assert counts == {"shipped prompt": 3, "permissive prompt": 34}
