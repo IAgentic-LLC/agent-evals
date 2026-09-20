@@ -45,6 +45,7 @@ ADAPTERS = (
     "triage-live",
     "triage-live-customer-id",
     "triage-live-customer-id-topics",
+    "triage-live-customer-id-untrusted",
     "triage-live-customer-id-stall-guard",
     "triage-live-customer-id-leaky",
     "reorder-live",
@@ -68,6 +69,8 @@ def _make_adapter(name: str, replay: str | None):
         return triage.StallGuardAdapter()
     if name == "triage-live-customer-id-topics":
         return triage.RunbookTopicsAdapter()
+    if name == "triage-live-customer-id-untrusted":
+        return triage.UntrustedTextAdapter()
     if name == "reorder-live":
         from agent_evals.adapters import reorder
 

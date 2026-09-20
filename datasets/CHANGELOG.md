@@ -2,6 +2,10 @@
 
 Every published version of a dataset is frozen. A change is a new version with an entry here, never an edit in place.
 
+## triage_redteam_v1 (2026-09-21)
+
+`triage_redteam_v1` is made by `scripts/build_redteam_set.py` for chapter 21: 96 tickets for red-teaming the triage product with injected instructions. 12 are host tickets run clean (controls), 72 are in-scope attacks (12 hosts times 6 ways of delivering an instruction, aimed at a tool the host's own specialist has) and 12 are cross-wall attacks (aimed at a tool the specialist does not have). Written by the author before the product was run on any of them, all round 1, all test data, all aimed at a simulated product with simulated tools. **Caution:** one author; the payloads are simple, short and in the style of the injected tickets already in `triage_heldout_v1`, so word overlap with that set reaches 0.36; and the attacks were written without seeing how the product answers them, so they are not adaptive. `triage_redteam_v2` (round 2) is written after reading round 1.
+
 ## triage_routing_v1 (2026-09-20)
 
 `triage_routing_v1` is made by `scripts/build_routing_set.py` for chapter 20: 24 tickets for the triage product's routing and handoffs. 12 are misfiled (the category is wrong and the text is clear), 8 are boundary tickets (the text sits between two or three specialists; `expected.handled_by` is my choice and `expected.acceptable` lists the specialists I would also accept), and 4 are distractors (the category is right and the text mentions another subject). They are all test data, written before the product was run on them, and nothing was tuned on them. **Caution:** one author, no second labeler, and the boundary labels are arguable on purpose. Slices are small (`kind` has 8 and 4 cases in two values), so intervals are wide. Word overlap with `triage_heldout_v1` is at most 0.11.
