@@ -434,6 +434,7 @@ def cmd_abstention_report(args) -> int:
         "paired": lambda: abstention.render_paired(cases, runs),
         "scores": lambda: abstention.render_scores(cases, first),
         "gate": lambda: abstention.render_gate(cases, first),
+        "caught": lambda: abstention.render_caught(cases, first),
         "overlap": lambda: abstention.render_overlap(cases, runs),
     }
     print(parts[args.part](), end="")
@@ -742,7 +743,7 @@ def main(argv: list[str] | None = None) -> int:
     p_ab.add_argument("--dataset", required=True)
     p_ab.add_argument(
         "--part",
-        choices=("matrix", "kinds", "paired", "scores", "gate", "overlap"),
+        choices=("matrix", "kinds", "paired", "scores", "gate", "caught", "overlap"),
         required=True,
     )
     p_ab.set_defaults(func=cmd_abstention_report)
