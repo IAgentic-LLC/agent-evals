@@ -12,6 +12,7 @@ dependencies = [
     "python-dotenv>=1.0",
     "triage-app",
     "reliable-agents-labs",
+    "jsonschema>=4.26.0",
 ]
 
 [project.scripts]

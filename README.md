@@ -71,6 +71,12 @@ On that run 41 of 42 tickets started with leftovers, the leaky score was 31 requ
 
 On the 42 held-out tickets the product with the customer ID breaks 0, 14 and 10 tickets under the three policies in the first pass (0, 13, 9 in the second and third), and the product as shipped breaks none. Which of those actions are acceptable is a product decision that is not made here: the permissions file follows what the tickets say and is data, so it can change.
 
+## Chapter 9: tool use
+
+`src/agent_evals/recording.py` wraps the model client and records every tool call the model asks for (`Trace.tool_calls`: round, name, arguments, whether the tool was offered, and the result), including calls the ledger of side effects cannot see. `src/agent_evals/tool_calls.py` checks each call against six rules (unknown tool, tool not offered, arguments that break the tool's declared JSON Schema, a customer other than the ticket's, a refund with no lookup first, a refund above the looked-up invoice) and classifies each runbook search as relevant, irrelevant or empty. `agent-evals calls --run R --dataset D` prints the table and exits 1 if a rule was broken, or 2 for a run recorded before calls were kept.
+
+Recorded on the 42 held-out tickets: `runs/triage-heldout-v1-calls` and `-calls-2` (the customer-id product) and `-topics` and `-topics-2` (the same product with `RunbookTopicsAdapter`, whose empty search reply also lists the runbook's topics). None of 421 calls broke a rule, and 56 of 62 runbook searches in the first run came back empty. The hint halves the empty searches and adds irrelevant ones (`scripts/search_outcomes.py`, `scripts/plot_searches.py`). The hint was designed after reading these tickets' failed searches, so the comparison is indicative and not a clean test.
+
 ## Run it
 
 ```bash

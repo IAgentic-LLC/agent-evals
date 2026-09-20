@@ -22,6 +22,7 @@ from triage_app.supervisor import route_ticket
 from triage_app.tickets import Ticket
 from triage_app.tools import ACTIONS_TAKEN, BILLING_TOOLS, _actions_var
 
+from agent_evals.recording import RecordingClient
 from agent_evals.runner import read_traces
 from agent_evals.schema import EvalCase, Trace
 
@@ -84,8 +85,15 @@ async def _run_once(
     left_over = len(ACTIONS_TAKEN)
     started = time.perf_counter()
     handled_by, error, answer = None, None, ""
+    if client is None:
+        # The live adapters leave the client to the product. Build the one it would
+        # have built, so the recorder can sit in front of it.
+        from triage_app.specialists import _real_client_or
+
+        client = _real_client_or(None)
+    recorder = RecordingClient(client)
     try:
-        resolution = await route_ticket(_ticket(case), client=client)
+        resolution = await route_ticket(_ticket(case), client=recorder)
         handled_by = resolution.handled_by
         answer = resolution.answer
     except Exception as exc:  # noqa: BLE001 - a failed run is a result, not a crash of the harness
@@ -100,6 +108,7 @@ async def _run_once(
         error=error,
         latency_s=round(time.perf_counter() - started, 3),
         ledger_at_start=left_over,
+        tool_calls=recorder.finish(),
     )
 
 
@@ -144,6 +153,40 @@ class CustomerIdAdapter:
 
     async def run(self, case: EvalCase, trial: int) -> Trace:
         return await _run_once(case, trial, self.name, self._client)
+
+
+class RunbookTopicsAdapter(CustomerIdAdapter):
+    """The customer-id product with one change to a tool's reply: when the runbook
+    search finds nothing, it says which topics the runbook does have. The rest of the
+    product, the model and the tickets are the same, so a difference in how the model
+    uses the search is a difference in what the tool told it.
+    """
+
+    name = "triage-live-customer-id-topics"
+
+    def __enter__(self):
+        import json
+
+        from triage_app import tools
+
+        super().__enter__()
+        self._search = tools.ALL_TOOL_FNS["search_runbook"]
+        original = self._search
+
+        def search_with_topics(args: dict) -> str:
+            reply = json.loads(original(args))
+            if reply.get("result") == "no matching runbook entry":
+                reply["topics_in_runbook"] = sorted(tools._RUNBOOKS)
+            return json.dumps(reply)
+
+        tools.ALL_TOOL_FNS["search_runbook"] = search_with_topics
+        return self
+
+    def __exit__(self, *exc_info) -> None:
+        from triage_app import tools
+
+        tools.ALL_TOOL_FNS["search_runbook"] = self._search
+        super().__exit__(*exc_info)
 
 
 class LeakyCustomerIdAdapter(CustomerIdAdapter):

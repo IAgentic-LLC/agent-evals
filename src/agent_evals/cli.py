@@ -11,7 +11,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from agent_evals import answer_graders, grader_check, invariants, world
+from agent_evals import answer_graders, grader_check, invariants, tool_calls, world
 from agent_evals import dataset as dataset_mod
 from agent_evals import gate as gate_mod
 from agent_evals.manifest import build_manifest, harness_state, now
@@ -28,6 +28,7 @@ from agent_evals.stats import wilson_interval
 ADAPTERS = (
     "triage-live",
     "triage-live-customer-id",
+    "triage-live-customer-id-topics",
     "triage-live-customer-id-leaky",
     "triage-replay",
     "triage-scripted-wall",
@@ -42,6 +43,8 @@ def _make_adapter(name: str, replay: str | None):
         return triage.LiveAdapter()
     if name == "triage-live-customer-id":
         return triage.CustomerIdAdapter()
+    if name == "triage-live-customer-id-topics":
+        return triage.RunbookTopicsAdapter()
     if name == "triage-live-customer-id-leaky":
         return triage.LeakyCustomerIdAdapter()
     if name == "triage-scripted-wall":
@@ -271,6 +274,19 @@ def cmd_invariants(args) -> int:
     return 1 if broken else 0
 
 
+def cmd_calls(args) -> int:
+    cases = {c.case_id: c for c in load_cases(args.dataset)}
+    traces = read_traces(Path(args.run) / "traces.jsonl")
+    if not any(t.tool_calls for t in traces):
+        print(
+            f"{args.run} has no recorded tool calls. It was recorded before they were."
+        )
+        return 2
+    print(tool_calls.render(args.run, cases, traces), end="")
+    broken = any(tool_calls.call_problems(cases[t.case_id], t) for t in traces)
+    return 1 if broken else 0
+
+
 def cmd_gate(args) -> int:
     sc = _scorecard_for(Path(args.run), Path(args.dataset).stem, args.dataset)
     extra = None
@@ -369,6 +385,13 @@ def main(argv: list[str] | None = None) -> int:
     p_inv.add_argument("--policy", choices=list(invariants.POLICIES), required=True)
     p_inv.add_argument("--permissions", help="what each ticket itself asked for")
     p_inv.set_defaults(func=cmd_invariants)
+
+    p_calls = sub.add_parser(
+        "calls", help="check every recorded tool call; exit 1 if a rule was broken"
+    )
+    p_calls.add_argument("--run", required=True)
+    p_calls.add_argument("--dataset", required=True)
+    p_calls.set_defaults(func=cmd_calls)
 
     p_gate = sub.add_parser("gate", help="apply a gate policy; exit 1 if blocked")
     p_gate.add_argument("--run", required=True)

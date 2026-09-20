@@ -36,6 +36,9 @@ class Trace(BaseModel):
     # How many actions were already in the ledger when this run started. Zero when
     # the run started clean. A run that starts with leftovers is not a clean trial.
     ledger_at_start: int = 0
+    # Every tool call the model asked for, in order: round, name, arguments, whether
+    # the tool was on offer, and the result. Empty for runs recorded before chapter 9.
+    tool_calls: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class Grade(BaseModel):

@@ -1,0 +1,62 @@
+"""Record every tool call a model asks for, not only the ones that changed something.
+
+The ledger of side effects (chapter 6) is written by the tools, after they run, so a
+call that was refused, that named a tool the specialist was never given, or that only
+read something leaves no trace there. This wrapper sits between the product and the
+model and writes down each call the model asks for: which tool, with what arguments,
+whether that tool was on offer, and what came back.
+"""
+
+from typing import Any
+
+
+class RecordingClient:
+    """Wraps a model client. It changes nothing about what the model is asked."""
+
+    def __init__(self, inner: Any) -> None:
+        self._inner = inner
+        self.calls: list[dict[str, Any]] = []
+        self._round = 0
+        # One list of messages per tool loop, kept so results can be read at the end.
+        self._histories: dict[int, list[dict]] = {}
+        self._batches: dict[int, list[list[dict[str, Any]]]] = {}
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._inner, name)
+
+    async def generate(self, *, system, user, tools=None, history=None):
+        if history is not None:
+            self._histories.setdefault(id(history), history)
+        result = await self._inner.generate(
+            system=system, user=user, tools=tools, history=history
+        )
+        self._round += 1
+        offered = {t["function"]["name"] for t in tools or []}
+        batch = [
+            {
+                "round": self._round,
+                "name": c.name,
+                "arguments": dict(c.arguments),
+                "offered": c.name in offered,
+                "result": None,
+            }
+            for c in result.tool_calls
+        ]
+        self.calls += batch
+        if batch and history is not None:
+            self._batches.setdefault(id(history), []).append(batch)
+        return result
+
+    def finish(self) -> list[dict[str, Any]]:
+        """Attach each call's result and return the calls in the order they were asked."""
+        for key, batches in self._batches.items():
+            messages = self._histories[key]
+            # Each assistant message that asked for tools is followed by one tool
+            # message per call, in the same order.
+            answered = iter([m for m in messages if m.get("role") == "tool"])
+            for batch in batches:
+                for call in batch:
+                    reply = next(answered, None)
+                    if reply is not None:
+                        call["result"] = reply.get("content")
+        return self.calls
