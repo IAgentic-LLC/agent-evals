@@ -111,16 +111,32 @@ def test_v5_trades_a_missed_ask_for_a_false_alarm():
     assert asks_v5(_case(), former) and not asks_v4(_case(), former)
 
 
-def test_the_customer_check_passes_on_every_recorded_run_and_fails_on_a_planted_mistake():
+def test_the_customer_check_passes_on_every_recorded_run_but_one_and_fails_a_planted_one():
     traces = [
-        t
+        (path.parent.name, t)
         for path in (ROOT / "runs").glob("*/traces.jsonl")
         if not path.parent.name.endswith("-leaky")  # a known-bad fixture
         for t in read_traces(path)
         if t.case_id in CASES and t.actions_taken
     ]
     assert len(traces) >= 183  # later chapters add runs
-    assert all(acted_on_the_right_customer(CASES[t.case_id], t) for t in traces)
+    failed = [
+        (run, t)
+        for run, t in traces
+        if not acted_on_the_right_customer(CASES[t.case_id], t)
+    ]
+    # Chapter 22: one run of the cheapest model, after "no invoice for 'cust-311'",
+    # looked the invoice up again under the spelling 'cust_311'. It is a read-only retry
+    # with a spelling variant, and the strict check cannot tell that from another
+    # customer, so it is kept as a known case and the check is not loosened.
+    assert [(run, t.case_id, t.trial) for run, t in failed] == [
+        ("triage-metered-3-5-lite", "HO-008", 1)
+    ]
+    assert [a["customer_id"] for a in failed[0][1].actions_taken] == [
+        "cust-311",
+        "cust_311",
+    ]
+    assert {a["action"] for a in failed[0][1].actions_taken} == {"look_up_invoice"}
     planted = _trace(actions=[{"action": "freeze_account", "customer_id": "cust-99"}])
     assert acted_on_the_right_customer(_case("cust-42"), planted) is False
     assert acted_on_the_right_customer(_case("cust-42"), _trace()) is True

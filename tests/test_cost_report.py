@@ -211,7 +211,7 @@ def test_every_cost_part_runs_from_the_command_line(capsys):
     import sys
 
     parts = ("models", "frontier", "spend", "latency", "plan", "paired")
-    for part in (*parts, "thinking", "repeat", "bill"):
+    for part in (*parts, "thinking", "repeat", "bill", "invariants"):
         argv = ["agent-evals", "cost", "--part", part]
         old, sys.argv = sys.argv, argv
         try:
@@ -247,3 +247,16 @@ def test_the_latency_table_shows_a_tail_the_mean_does_not():
     assert label == "2.5-flash"
     row = _flat(cost.render_latency(cases, traces).splitlines()[1])
     assert row.startswith("all 126 3.1 2.3 6.2 20.0 ")
+
+
+def test_the_invariant_report_finds_the_one_run_that_changed_the_customer_spelling():
+    cases, _, conditions = _recorded()
+    lines = cost.render_invariants(cases, conditions).splitlines()
+    assert _flat(lines[1]) == "3.6-flash 126 0"
+    assert _flat(lines[2]) == "3.5-flash-lite 126 1"
+    assert _flat(lines[3]) == "2.5-flash 126 0"
+    assert _flat(lines[4]) == "3.6 + stall guard 126 0"
+    assert lines[5] == (
+        "  3.5-flash-lite, HO-008 run 1: look_up_invoice cust_311, ticket has cust-311"
+    )
+    assert len(lines) == 6

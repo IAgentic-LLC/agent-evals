@@ -648,6 +648,8 @@ def cmd_cost(args) -> int:
         print(cost.render_thinking(conditions, prices), end="")
     elif args.part == "bill":
         print(cost.render_bill(conditions, prices), end="")
+    elif args.part == "invariants":
+        print(cost.render_invariants(cases, conditions), end="")
     elif args.part == "repeat":
         first = [
             (label, read_traces(Path("runs") / run / "traces.jsonl"))
@@ -1121,6 +1123,7 @@ def main(argv: list[str] | None = None) -> int:
             "thinking",
             "repeat",
             "bill",
+            "invariants",
         ),
     )
     p_co.add_argument("--condition", default="3.6-flash")

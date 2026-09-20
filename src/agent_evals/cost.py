@@ -13,6 +13,7 @@ from typing import Any
 import yaml
 
 from agent_evals import compare, reliability
+from agent_evals.answer_graders import acted_on_the_right_customer
 from agent_evals.schema import EvalCase, Trace
 from agent_evals.stats import percentile, wilson_interval
 
@@ -228,6 +229,30 @@ def render_thinking(
             + f"{f'{100 * thought / out:.0f}%':>9}{billed - unseen:>15.4f}{billed:>10.4f}"
         )
     return "\n".join(lines) + "\n"
+
+
+def render_invariants(
+    cases: dict[str, EvalCase], conditions: list[tuple[str, str, list[Trace]]]
+) -> str:
+    """The met rate counts required actions and says nothing of what a run did wrong on
+    the way. Chapter 8's customer check asks whether every action that names a customer
+    names the ticket's own. This counts the runs that fail it, and lists each one."""
+    lines = [f"{'condition':<19}{'runs':>6}{'wrong customer':>16}"]
+    found = []
+    for label, _, traces in conditions:
+        bad = [
+            t for t in traces if not acted_on_the_right_customer(cases[t.case_id], t)
+        ]
+        lines.append(f"{label:<19}{len(traces):>6}{len(bad):>16}")
+        for t in bad:
+            ticket = cases[t.case_id].input.get("customer_id")
+            for a in t.actions_taken:
+                if a.get("customer_id", ticket) != ticket:
+                    found.append(
+                        f"  {label}, {t.case_id} run {t.trial}: "
+                        + f"{a['action']} {a['customer_id']}, ticket has {ticket}"
+                    )
+    return "\n".join(lines + found) + "\n"
 
 
 def render_bill(
