@@ -47,6 +47,12 @@ The six tickets are the product's development examples (the `app crash` runbook 
 
 The first run on the test set (`runs/triage-heldout-v1`, with the chapter 2 fix): routing 30/42 against 6/6 on the development six. Billing 13/13 and security 12/12 route correctly; the technical specialist routes 5/17, because its runbook search only matches the words `app crash` and `login` and the specialist then loops until the tool-round limit. Version 2 of the set (`triage_heldout_v2.jsonl`) corrects two of my labels and marks two as contested; the recorded run can be rescored against it, and the harness says so when the dataset has changed since the run.
 
+## Chapter 5: graders are software
+
+`src/agent_evals/answer_graders.py` has a grader for what an answer says, `asks_for_known_info`, in five versions (v1 to v5), and a grader for a tool argument, `acted_on_the_right_customer`. `agent-evals grader check` measures a grader against hand labels (`datasets/graders/asks_for_known_info.labels.jsonl`: 117 dev answers and 59 test answers, one labeler) and prints precision and recall with intervals; `agent-evals grade` applies a grader to a recorded run. The test answers come from two runs recorded after the versions were frozen and were labeled before any grader ran on them.
+
+Version 4 makes 2 errors in 117 dev answers and 2 in 59 test answers. On the product as shipped it flags about half of the answers as asking for a customer ID the ticket already carried, and 0 with the Chapter 2 fix. The fix also changed what the product does: across the same 42 tickets the shipped product only searches the runbook and escalates, while with the customer ID it looks up 13 invoices, issues 4 refunds and freezes 9 accounts (`runs/triage-heldout-v1-shipped*` against `runs/triage-heldout-v1*`).
+
 ## Run it
 
 ```bash

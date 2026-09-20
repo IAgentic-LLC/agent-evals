@@ -88,13 +88,10 @@ def _rate(k: int, n: int) -> str:
     return f"{k}/{n} ({100 * k / n:.1f}%)  {100 * low:.0f}-{100 * high:.0f}%"
 
 
-def render(name: str, result: Result, snippet: int = 110) -> str:
+def render(name: str, result: Result, snippet: int = 70) -> str:
     positives = result.tp + result.fn
     lines = [
-        (
-            f"Grader {name} against {result.total} hand-labeled answers "
-            f"({positives} labeled yes)"
-        ),
+        f"Grader {name}: {result.total} labeled answers ({positives} yes)",
         "",
         "                labeled yes  labeled no",
         f"  flagged yes   {result.tp:>11}  {result.fp:>10}",

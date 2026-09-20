@@ -11,6 +11,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from agent_evals import answer_graders, grader_check
 from agent_evals import dataset as dataset_mod
 from agent_evals import gate as gate_mod
 from agent_evals.manifest import build_manifest, harness_state, now
@@ -22,6 +23,7 @@ from agent_evals.runner import (
     write_traces,
 )
 from agent_evals.scorecard import build_scorecard, render_by_slice, render_markdown
+from agent_evals.stats import wilson_interval
 
 ADAPTERS = (
     "triage-live",
@@ -174,6 +176,47 @@ def cmd_dataset_check(args) -> int:
     return 1 if any(i.severity == "error" for i in issues) else 0
 
 
+def _grader(spec: str):
+    """`asks_for_known_info:v4` -> the function, or exit with a clear message."""
+    name, _, version = spec.partition(":")
+    versions = answer_graders.GRADERS.get(name)
+    if versions is None or version not in versions:
+        known = ", ".join(
+            f"{n}:{v}" for n, vs in answer_graders.GRADERS.items() for v in vs
+        )
+        raise SystemExit(f"unknown grader {spec!r}; choose one of {known}")
+    return versions[version]
+
+
+def cmd_grader_check(args) -> int:
+    labels = grader_check.load_labels(args.labels)
+    if args.split:
+        labels = [row for row in labels if row["split"] == args.split]
+    cases = grader_check.load_cases_by_id(*args.datasets)
+    result = grader_check.check(_grader(args.grader), labels, args.runs_dir, cases)
+    name = args.grader + (f" on the {args.split} split" if args.split else "")
+    print(grader_check.render(name, result), end="")
+    return 0
+
+
+def cmd_grade(args) -> int:
+    cases = {c.case_id: c for c in load_cases(args.dataset)}
+    grader = _grader(args.grader)
+    traces = [
+        t
+        for t in read_traces(Path(args.run) / "traces.jsonl")
+        if not t.error and t.answer.strip()
+    ]
+    flagged = sum(grader(cases[t.case_id], t) for t in traces)
+    low, high = wilson_interval(flagged, len(traces))
+    print(
+        f"{args.grader}: flagged {flagged} of {len(traces)} answers "
+        f"({100 * flagged / len(traces):.1f}%, 95% interval "
+        f"{100 * low:.1f}% to {100 * high:.1f}%)"
+    )
+    return 0
+
+
 def cmd_gate(args) -> int:
     sc = _scorecard_for(Path(args.run), Path(args.dataset).stem, args.dataset)
     result = gate_mod.evaluate(gate_mod.load_policy(args.policy), sc)
@@ -229,6 +272,29 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_check.add_argument("--env-file", help="a .env file to load at runtime")
     p_check.set_defaults(func=cmd_dataset_check)
+
+    p_grader = sub.add_parser("grader", help="test a grader against hand labels")
+    gr_sub = p_grader.add_subparsers(dest="grader_command", required=True)
+    p_gcheck = gr_sub.add_parser("check", help="precision and recall against labels")
+    p_gcheck.add_argument("--grader", required=True, help="for example name:v4")
+    p_gcheck.add_argument("--labels", required=True)
+    p_gcheck.add_argument("--split", help="use only the dev or the test labels")
+    p_gcheck.add_argument("--runs-dir", default="runs")
+    p_gcheck.add_argument(
+        "--datasets",
+        nargs="+",
+        default=[
+            "datasets/triage_book3_six.jsonl",
+            "datasets/triage_heldout_v1.jsonl",
+        ],
+    )
+    p_gcheck.set_defaults(func=cmd_grader_check)
+
+    p_grade = sub.add_parser("grade", help="apply a grader to a run's answers")
+    p_grade.add_argument("--run", required=True)
+    p_grade.add_argument("--dataset", required=True)
+    p_grade.add_argument("--grader", required=True, help="for example name:v4")
+    p_grade.set_defaults(func=cmd_grade)
 
     p_gate = sub.add_parser("gate", help="apply a gate policy; exit 1 if blocked")
     p_gate.add_argument("--run", required=True)

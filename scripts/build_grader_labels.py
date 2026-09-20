@@ -7,8 +7,9 @@ did not try that ID first. An answer that only mentions the ID, that asks for
 other information (a device model, a receipt number after a failed lookup), or
 that asks about someone else's account is negative.
 
-I read every answer in the recorded runs below. Every answer not listed as
-positive is negative. `contested` marks a label I am not sure of.
+I went through every answer in the recorded runs below, reading each sentence
+that mentions an account, an email or an ID, or asks a question. Every answer
+not listed as positive is negative. `contested` marks a label I am not sure of.
 
 One labeler, so these labels carry one person's judgment.
 """
@@ -30,6 +31,43 @@ RUNS = [
     "triage-live-3x-sequential",
     "triage-live-3x-concurrent",
 ]
+
+# The test split: two runs recorded after the grader versions were frozen, labeled
+# by reading the answers before any grader was run on them.
+TEST_RUNS = ["triage-heldout-v1-shipped-2", "triage-heldout-v1-2"]
+TEST_POSITIVE = {
+    ("triage-heldout-v1-shipped-2", case): None
+    for case in (
+        "HO-001",
+        "HO-002",
+        "HO-003",
+        "HO-004",
+        "HO-005",
+        "HO-006",
+        "HO-007",
+        "HO-008",
+        "HO-009",
+        "HO-010",
+        "HO-023",
+        "HO-024",
+        "HO-026",
+        "HO-032",
+        "HO-036",
+        "HO-040",
+    )
+}
+TEST_CONTESTED = {
+    (
+        "triage-heldout-v1-shipped-2",
+        "HO-007",
+        1,
+    ): "asks only if the customer wants a direct check",
+    (
+        "triage-heldout-v1-2",
+        "HO-008",
+        1,
+    ): "asks the customer to double-check the ID after a lookup found nothing",
+}
 
 # (run, case_id) -> the trials that are positive. None means every trial.
 POSITIVE = {
@@ -80,33 +118,42 @@ CONTESTED = {
 }
 
 
-def main() -> None:
+def _rows(runs, positives, contested, split):
     rows = []
-    for run in RUNS:
+    for run in runs:
         for t in read_traces(ROOT / "runs" / run / "traces.jsonl"):
             if t.error or not t.answer.strip():
                 continue
             key = (run, t.case_id)
-            trials = POSITIVE.get(key, set())
-            positive = key in POSITIVE and (trials is None or t.trial in trials)
-            note = CONTESTED.get((run, t.case_id, t.trial), "")
+            trials = positives.get(key, set())
+            positive = key in positives and (trials is None or t.trial in trials)
+            note = contested.get((run, t.case_id, t.trial), "")
             rows.append(
                 {
                     "run": run,
                     "case_id": t.case_id,
                     "trial": t.trial,
-                    "split": "dev",
+                    "split": split,
                     "label": positive,
                     "contested": bool(note),
                     "note": note,
                 }
             )
+    return rows
+
+
+def main() -> None:
+    rows = _rows(RUNS, POSITIVE, CONTESTED, "dev")
+    rows += _rows(TEST_RUNS, TEST_POSITIVE, TEST_CONTESTED, "test")
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(
         "\n".join(json.dumps(r) for r in rows) + "\n", encoding="utf8", newline="\n"
     )
-    positives = sum(r["label"] for r in rows)
-    print(f"wrote {len(rows)} labels ({positives} positive) to {OUT}")
+    for split in ("dev", "test"):
+        part = [r for r in rows if r["split"] == split]
+        yes = sum(r["label"] for r in part)
+        print(f"{split}: {len(part)} labels, {yes} positive")
+    print(f"wrote {len(rows)} labels to {OUT}")
 
 
 if __name__ == "__main__":
