@@ -231,7 +231,9 @@ def cmd_state(args) -> int:
             found[rule].append(f"{t.case_id} t{t.trial}")
     print(f"State rules for {args.run} ({len(traces)} traces)")
     for rule, hits in found.items():
-        print(f"  {rule:<30}{len(hits):>3}   {', '.join(hits)}")
+        shown = ", ".join(hits[:2])
+        more = f" (+{len(hits) - 2} more)" if len(hits) > 2 else ""
+        print(f"  {rule:<30}{len(hits):>3}   {shown}{more}".rstrip())
     return 1 if any(found.values()) else 0
 
 

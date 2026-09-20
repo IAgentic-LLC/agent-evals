@@ -55,9 +55,15 @@ Version 4 makes 2 errors in 117 dev answers and 2 in 59 test answers. On the pro
 
 ## Chapter 6: state beats prose
 
-`src/agent_evals/world.py` rebuilds what a run changed (refunds, frozen accounts, restarts, escalations) from the ledger of side effects, and checks four rules about it: a run acts only on the ticket's own customer, a refund never exceeds the invoice on file, at most one refund, and a run that fails leaves the world unchanged. `agent-evals state --run R --dataset D` prints the rule counts. `src/agent_evals/action_claims.py` has three ways to ask whether an action happened (a naive prose check, a careful prose check in English, Spanish and French, and the state), and `scripts/prose_vs_state.py` compares them over the 176 recorded answers.
+`src/agent_evals/world.py` rebuilds what a run changed (refunds, frozen accounts, restarts, escalations) from the ledger of side effects, and checks four rules about it (Chapter 7 adds a fifth): a run acts only on the ticket's own customer, a refund never exceeds the invoice on file, at most one refund, and a run that fails leaves the world unchanged. `agent-evals state --run R --dataset D` prints the rule counts. `src/agent_evals/action_claims.py` has three ways to ask whether an action happened (a naive prose check, a careful prose check in English, Spanish and French, and the state), and `scripts/prose_vs_state.py` compares them over the 176 recorded answers.
 
 The prose graders disagree with the state a lot (a naive refund check is right 8 times in 32), the state cannot be misled by wording, and across 48 errored runs one had already restarted a service and left no answer (`runs/triage-heldout-v1`, HO-042).
+
+## Chapter 7: sandboxes and simulated environments
+
+Each run needs its own state. `_run_once` in `src/agent_evals/adapters/triage.py` gives every run a new ledger and records how many actions the ledger already held (`ledger_at_start`, on every trace). A fifth state rule, `started_with_leftover_state`, fires when that number is above zero. `LeakyCustomerIdAdapter` skips the reset on purpose, and `runs/triage-heldout-v1-leaky` is its recorded run on the 42 held-out tickets; it must never be used to measure anything. `runs/triage-heldout-v1-3` is a third clean pass, beside `triage-heldout-v1` and `-2`.
+
+On that run 41 of 42 tickets started with leftovers, the leaky score was 31 required-action passes against 25 to 28 on the clean runs (29 when each ticket's own actions are counted), and 5 tickets showed a forbidden refund that an earlier ticket had made. `scripts/plot_leak.py` draws the comparison from the recorded runs. `scripts/sandbox_demos.py` shows a temporary directory, a controlled clock, an in-memory database and, behind `uv run --extra containers ... --container` and a running Docker, a throwaway Postgres container per run. Nothing else in the repo needs Docker.
 
 ## Run it
 

@@ -115,6 +115,7 @@ def test_the_customer_check_passes_on_every_recorded_run_and_fails_on_a_planted_
     traces = [
         t
         for path in (ROOT / "runs").glob("*/traces.jsonl")
+        if not path.parent.name.endswith("-leaky")  # a known-bad fixture
         for t in read_traces(path)
         if t.case_id in CASES and t.actions_taken
     ]

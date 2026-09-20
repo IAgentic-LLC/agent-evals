@@ -17,6 +17,11 @@ dependencies = [
 [project.scripts]
 agent-evals = "agent_evals.cli:main"
 
+[project.optional-dependencies]
+containers = [
+    "testcontainers[postgres]>=4.15.0",
+]
+
 [tool.uv.sources]
 triage-app = { git = "https://github.com/IAgentic-LLC/triage-app.git", tag = "ch35-end" }
 reliable-agents-labs = { git = "https://github.com/Sebuliba-Adrian/reliable-agents-labs.git" }
