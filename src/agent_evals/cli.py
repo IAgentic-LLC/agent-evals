@@ -12,8 +12,10 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from agent_evals import (
+    abstention,
     answer_graders,
     conversation,
+    forced,
     grader_check,
     invariants,
     tool_calls,
@@ -412,6 +414,48 @@ def cmd_grounding_check(args) -> int:
     return grounding_check.main(_grounding_names())
 
 
+def _abstention_inputs(args):
+    cases = {c.case_id: c for c in load_cases(args.dataset)}
+    runs = {
+        name: [read_traces(Path("runs") / r / "traces.jsonl") for r in dirs]
+        for name, dirs in abstention.CONFIGS.items()
+    }
+    return cases, runs
+
+
+def cmd_abstention_report(args) -> int:
+    cases, runs = _abstention_inputs(args)
+    first = runs["shipped prompt"][0]
+    parts = {
+        "matrix": lambda: abstention.render_matrix(cases, runs),
+        "kinds": lambda: abstention.render_kinds(cases, runs),
+        "paired": lambda: abstention.render_paired(cases, runs),
+        "scores": lambda: abstention.render_scores(cases, first),
+        "gate": lambda: abstention.render_gate(cases, first),
+        "overlap": lambda: abstention.render_overlap(cases, runs),
+    }
+    print(parts[args.part](), end="")
+    return 0
+
+
+def _forced_inputs(args):
+    runs = {
+        r: read_traces(Path("runs") / r / "traces.jsonl")
+        for runs in forced.GROUPS.values()
+        for r in runs
+    }
+    return forced.forced_answers(runs), forced.load_readings(args.readings)
+
+
+def cmd_forced_report(args) -> int:
+    found, readings = _forced_inputs(args)
+    if args.part == "readings":
+        print(forced.render_readings(found, readings), end="")
+    else:
+        print(forced.render_proxies(found, readings), end="")
+    return 0
+
+
 def cmd_conversation_check(args) -> int:
     from agent_evals import mechanics
 
@@ -616,6 +660,19 @@ def main(argv: list[str] | None = None) -> int:
     p_cg.add_argument("--run", nargs="+", required=True)
     p_cg.add_argument("--dataset", required=True)
     p_cg.set_defaults(func=cmd_conversation_grade)
+
+    p_ab = sub.add_parser("abstention", help="score declining, from recorded runs")
+    p_ab.add_argument("--dataset", required=True)
+    p_ab.add_argument(
+        "--part",
+        choices=("matrix", "kinds", "paired", "scores", "gate", "overlap"),
+        required=True,
+    )
+    p_ab.set_defaults(func=cmd_abstention_report)
+    p_fo = sub.add_parser("forced", help="the answers that follow three empty searches")
+    p_fo.add_argument("--readings", default="datasets/triage_forced.readings.jsonl")
+    p_fo.add_argument("--part", choices=("readings", "proxies"), required=True)
+    p_fo.set_defaults(func=cmd_forced_report)
 
     p_gr = sub.add_parser("grounding", help="check answers against what was retrieved")
     gr_sub = p_gr.add_subparsers(dest="grounding_command", required=True)

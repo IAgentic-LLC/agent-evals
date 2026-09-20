@@ -2,6 +2,15 @@
 
 Every published version of a dataset is frozen. A change is a new version with an entry here, never an edit in place.
 
+## pkg_abstain_v1 and the forced-answer readings (2026-09-20)
+
+`pkg_abstain_v1` is made by `scripts/build_pkg_abstain.py` for chapter 14. 110 cases: the 72 non-counterfactual questions of `pkg_answers_v1` (62 retrieval questions, 10 freshness questions) and 38 new ones, `AB-001` to `AB-038`: 15 `outside` (no package in the index does the job), 15 `beyond_summary` (a package is named and the question asks for a fact its one-line summary lacks) and 8 `false_premise`.
+
+- **Split:** within each kind the cases alternate `dev`, `test` in file order, 57 and 53. The 72 older questions were all `test` before; this file reassigns them. They had already been read closely in chapters 12 and 13, so `dev` is not a clean set for them.
+- **Caution:** I wrote the 38 new questions after reading the chapter 13 answers, so I knew the model declines well. The labels (what should be declined) come from one person.
+- Embeddings for the new questions are in `runs/pkg-abstain-embeddings`.
+- `triage_forced.readings.jsonl` holds my reading of the 28 triage answers that followed three empty runbook searches (chapter 10): `gap_stated`, `false_action_claim` and `claims_source_it_lacks`. One reader, the author. `scripts/build_forced_readings.py` holds the rubric.
+
 ## pkg_answers_v1 and its readings (2026-09-20)
 
 Made by `scripts/build_pkg_answers.py` for chapter 13. 77 cases: the 62 questions of `pkg_queries_v2` byte for byte (same IDs), then 10 freshness questions (`FQ-001` to `FQ-010`, "what is the latest version of X") and 5 counterfactual questions (`CF-001` to `CF-005`).
