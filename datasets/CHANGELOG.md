@@ -2,6 +2,13 @@
 
 Every published version of a dataset is frozen. A change is a new version with an entry here, never an edit in place.
 
+## judge_items_v1 (2026-09-20)
+
+Made by `scripts/build_judge_items.py` for chapter 15, from the recorded answers of chapter 13 and my readings of them. 137 items: 92 `real` (the answers that cite something; label from my reading: 85 supported, 6 borderline, 1 stretch) and 45 `planted`. A planted item is an answer I read as supported (counterfactual answers excluded), copied with one sentence added that the retrieved summaries do not state: 15 `praise`, 15 `fact`, 15 `capability`. The 45 originals carry `clean_of_planted` and are the negatives. `real` items alternate `dev` and `test`; a planted copy is in the same half as its original, with the kinds cycling within each half. Random choices use seed 0.
+
+- **Caution:** the planted sentences are blunt, and none names a package or contains a number, so plain-code checks cannot see them by design. They test whether a judge sees a claim the code cannot. They do not test subtle cases. The real items do, and their labels are one person's reading.
+- **Known label problem:** `pkg-answers-1:PQ-013` ("You can also use SQLAlchemy" to connect to Postgres) is labeled supported, and a judge flagged it in every pass. On rereading, the summary "Database Abstraction Library" does not say Postgres, so a stricter label would be borderline. The file is frozen so results stay comparable.
+
 ## pkg_abstain_v1 and the forced-answer readings (2026-09-20)
 
 `pkg_abstain_v1` is made by `scripts/build_pkg_abstain.py` for chapter 14. 110 cases: the 72 non-counterfactual questions of `pkg_answers_v1` (62 retrieval questions, 10 freshness questions) and 38 new ones, `AB-001` to `AB-038`: 15 `outside` (no package in the index does the job), 15 `beyond_summary` (a package is named and the question asks for a fact its one-line summary lacks) and 8 `false_premise`.

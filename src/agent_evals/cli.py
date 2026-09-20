@@ -515,7 +515,7 @@ def cmd_judge_report(args) -> int:
         "planted": lambda: judge_report.render_planted(items, rows, split),
         "real": lambda: judge_report.render_real(items, rows, split),
         "retest": lambda: judge_report.render_retest(items, rows, split),
-        "cost": lambda: judge_report.render_cost(rows),
+        "cost": lambda: judge_report.render_cost(rows, args.price_in, args.price_out),
     }
     print(parts[args.part](), end="")
     return 0
@@ -767,6 +767,10 @@ def main(argv: list[str] | None = None) -> int:
     p_jp.add_argument("--run", nargs="+", required=True)
     p_jp.add_argument("--items", required=True)
     p_jp.add_argument("--split", choices=("dev", "test"))
+    p_jp.add_argument("--price-in", type=float, help="dollars per million input tokens")
+    p_jp.add_argument(
+        "--price-out", type=float, help="dollars per million output tokens"
+    )
     p_jp.add_argument(
         "--part",
         choices=("planted", "real", "retest", "cost", "disagreements", "compare"),

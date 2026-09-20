@@ -91,19 +91,27 @@ def render_retest(items, rows, split: str | None = None) -> str:
     return f"Same verdict in both passes: {_cell(same, both)}\n"
 
 
-def render_cost(rows) -> str:
+def render_cost(
+    rows, price_in: float | None = None, price_out: float | None = None
+) -> str:
     calls = len(rows)
     errors = sum(1 for r in rows if r["verdict"] is None)
     tin = sum(r.get("input_tokens", 0) for r in rows)
     tout = sum(r.get("output_tokens", 0) for r in rows)
     secs = sum(r["seconds"] for r in rows)
-    return (
+    text = (
         f"{'calls':<28}{calls:>10}\n"
         f"{'replies that were not JSON':<28}{errors:>10}\n"
         f"{'input tokens':<28}{tin:>10}\n"
         f"{'output tokens':<28}{tout:>10}\n"
         f"{'mean seconds per call':<28}{secs / calls:>10.1f}\n"
     )
+    if price_in is not None and price_out is not None:
+        # Prices are dollars per million tokens, given by the caller and never assumed.
+        dollars = (tin * price_in + tout * price_out) / 1_000_000
+        text += f"{'dollars at the given prices':<28}{dollars:>10.3f}\n"
+        text += f"{'dollars per judgment':<28}{dollars / calls:>10.5f}\n"
+    return text
 
 
 def disagreements(items, rows, split: str | None = None) -> list[tuple[dict, str]]:
@@ -159,7 +167,7 @@ def render_compare(items, first, second, names, split: str | None = None) -> str
         "real, my reading: borderline",
         "real, my reading: stretch",
     )
-    lines = [f"{'judge said unsupported':<32}{names[0]:>13}{names[1]:>13}"]
+    lines = [f"{'judge said unsupported':<32}{names[0]:>20}{names[1]:>20}"]
     for label in order:
         if label not in one and label not in two:
             continue
@@ -167,5 +175,5 @@ def render_compare(items, first, second, names, split: str | None = None) -> str
             f"{c[label]['said']} of {c[label]['n']}" if c[label]["n"] else "-"
             for c in (one, two)
         ]
-        lines.append(f"{label:<32}{cells[0]:>13}{cells[1]:>13}")
+        lines.append(f"{label:<32}{cells[0]:>20}{cells[1]:>20}")
     return "\n".join(lines) + "\n"

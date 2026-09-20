@@ -9,8 +9,6 @@ import hashlib
 import json
 from pathlib import Path
 
-import pytest
-
 from agent_evals import judge, judge_report
 from agent_evals.judge import ScriptedJudgeClient
 
@@ -189,12 +187,127 @@ def test_the_cost_report_totals_tokens_and_counts_replies_that_were_not_json():
 
 # ----------------------------------------------------------- recorded runs
 
+I = str(ITEMS)
 
-@pytest.mark.skipif(not (ROOT / "runs/judge-v1").exists(), reason="not recorded yet")
-def test_the_recorded_judge_run_names_its_model_prompt_items_and_a_clean_commit():
-    m = json.loads((ROOT / "runs/judge-v1/manifest.json").read_text(encoding="utf8"))
-    assert m["judge_model"]["model_id"] == "gemini-3.8-flash"
-    assert m["prompt"]["sha256"] == judge.prompt_hash("v1")
-    assert m["prompt"]["text"] == judge.VERSIONS["v1"]
-    assert m["items"]["sha256"] == _sha(ITEMS)
-    assert m["harness"]["dirty"] is False
+
+def _has(text, *fragments):
+    flat = " ".join(text.split())
+    for fragment in fragments:
+        assert " ".join(fragment.split()) in flat, fragment
+
+
+def _rows_of(*runs):
+    return judge_report.load_rows([ROOT / "runs" / r for r in runs])
+
+
+def test_the_recorded_runs_name_their_model_prompt_items_and_a_clean_commit():
+    for name, version, split, count in (
+        ("judge-v1", "v1", None, 137),
+        ("judge-v2-test", "v2", "test", 64),
+    ):
+        m = json.loads((ROOT / "runs" / name / "manifest.json").read_text("utf8"))
+        assert m["judge_model"]["model_id"] == "gemini-3.8-flash"
+        assert m["prompt"]["version"] == version
+        assert m["prompt"]["sha256"] == judge.prompt_hash(version)
+        assert m["prompt"]["text"] == judge.VERSIONS[version]
+        assert m["items"]["sha256"] == _sha(ITEMS)
+        assert (m["items"]["count"], m["items"]["split"]) == (count, split)
+        assert m["passes"] == 2 and m["harness"]["dirty"] is False
+
+
+def test_version_2_differs_from_version_1_only_by_the_added_instruction():
+    assert judge.VERSIONS["v2"].startswith(judge.VERSIONS["v1"])
+    assert judge.VERSIONS["v2"] != judge.VERSIONS["v1"]
+
+
+def test_version_1_finds_every_planted_fault_and_flags_over_a_third_of_clean_answers():
+    items = judge.load_items(ITEMS)
+    text = judge_report.render_planted(items, _rows_of("judge-v1"))
+    _has(
+        text,
+        "with praise added 30 of 30",
+        "with fact added 30 of 30",
+        "with capability added 30 of 30",
+        "the same answers, clean 37 of 90",
+    )
+
+
+def test_version_1_agrees_with_my_borderline_and_stretch_readings_and_flags_many_supported():
+    items = judge.load_items(ITEMS)
+    text = judge_report.render_real(items, _rows_of("judge-v1"))
+    _has(
+        text,
+        "supported 59 of 170",
+        "borderline 12 of 12",
+        "stretch 2 of 2",
+    )
+
+
+def test_two_passes_give_the_same_verdict_on_nearly_every_item():
+    items = judge.load_items(ITEMS)
+    _has(judge_report.render_retest(items, _rows_of("judge-v1")), "134 of 137")
+    text = judge_report.render_retest(items, _rows_of("judge-v2-test"), "test")
+    _has(text, "64 of 64")
+
+
+def test_on_the_test_half_version_2_keeps_every_fault_and_drops_the_false_alarms():
+    items = judge.load_items(ITEMS)
+    text = judge_report.render_compare(
+        items,
+        judge_report.load_rows([ROOT / "runs/judge-v1"]),
+        judge_report.load_rows([ROOT / "runs/judge-v2-test"]),
+        ["judge-v1", "judge-v2-test"],
+        "test",
+    )
+    _has(
+        text,
+        "with praise added 12 of 12 12 of 12",
+        "with fact added 12 of 12 12 of 12",
+        "with capability added 12 of 12 12 of 12",
+        "planted originals, clean 16 of 36 2 of 36",
+        "real, my reading: supported 24 of 80 2 of 80",
+        "real, my reading: borderline 12 of 12 4 of 12",
+    )
+
+
+def test_the_one_supported_answer_version_2_still_flags_in_every_pass_on_test():
+    items = judge.load_items(ITEMS)
+    found = judge_report.disagreements(items, _rows_of("judge-v2-test"), "test")
+    assert [i["item_id"] for i, _ in found] == ["pkg-answers-1:PQ-013"]
+    assert "SQLAlchemy to connect to a Postgres database" in found[0][1]
+
+
+def test_the_cost_report_totals_tokens_and_prices_only_when_given_prices():
+    text = judge_report.render_cost(_rows_of("judge-v1"))
+    _has(text, "calls 274", "input tokens 69470", "output tokens 17296")
+    assert "dollars" not in text
+    priced = judge_report.render_cost(_rows_of("judge-v1"), 0.75, 3.75)
+    _has(priced, "dollars at the given prices 0.117", "dollars per judgment 0.00043")
+
+
+def test_the_report_commands_fit_the_page_and_exit_0(capsys):
+    from agent_evals import cli
+
+    for part in ("planted", "real", "retest", "cost"):
+        assert (
+            cli.main(
+                [
+                    "judge",
+                    "report",
+                    "--run",
+                    "runs/judge-v1",
+                    "--items",
+                    I,
+                    "--part",
+                    part,
+                ]
+            )
+            == 0
+        )
+    both = ["--run", "runs/judge-v1", "runs/judge-v2-test", "--items", I]
+    assert (
+        cli.main(["judge", "report", *both, "--part", "compare", "--split", "test"])
+        == 0
+    )
+    for line in capsys.readouterr().out.splitlines():
+        assert len(line) <= 78, line
