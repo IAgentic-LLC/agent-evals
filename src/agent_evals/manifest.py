@@ -71,7 +71,7 @@ def build_manifest(
     started_at: datetime,
     wall_seconds: float,
 ) -> dict[str, Any]:
-    live = adapter.startswith(("triage-live", "reorder-live"))
+    live = adapter.startswith(("triage-live", "reorder-live", "pkg-live"))
     return {
         "adapter": adapter,
         "model": _model_config() if live else None,
@@ -91,6 +91,11 @@ def build_manifest(
             **(
                 {"reorder-app": _source("reorder-app")}
                 if adapter.startswith("reorder")
+                else {}
+            ),
+            **(
+                {"pkgintel-app": _source("pkgintel-app")}
+                if adapter.startswith("pkg")
                 else {}
             ),
         },

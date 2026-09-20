@@ -41,6 +41,7 @@ ADAPTERS = (
     "triage-live-customer-id-leaky",
     "reorder-live",
     "reorder-scripted",
+    "pkg-live",
     "triage-replay",
     "triage-scripted-wall",
     "triage-regressed",
@@ -66,6 +67,10 @@ def _make_adapter(name: str, replay: str | None):
         from agent_evals.adapters import reorder
 
         return reorder.ReorderScriptedAdapter()
+    if name == "pkg-live":
+        from agent_evals.adapters import pkgintel
+
+        return pkgintel.PkgAnswerAdapter()
     if name == "triage-live-customer-id-leaky":
         return triage.LeakyCustomerIdAdapter()
     if name == "triage-scripted-wall":
@@ -88,7 +93,7 @@ def _scorecard_for(run_dir: Path, dataset: str, cases_path: str):
 def cmd_run(args) -> int:
     if args.env_file:
         load_dotenv(args.env_file)
-    live = args.adapter.startswith(("triage-live", "reorder-live"))
+    live = args.adapter.startswith(("triage-live", "reorder-live", "pkg-live"))
     if live and not os.environ.get("GEMINI_API_KEY"):
         raise SystemExit(
             f"{args.adapter} needs GEMINI_API_KEY (use --env-file or export it)"
@@ -113,6 +118,9 @@ def cmd_run(args) -> int:
         wall_seconds=wall_seconds,
     )
     dump_json(out / "manifest.json", manifest)
+    if args.adapter.startswith("pkg"):
+        print(_grounding_text(out.name, cases, traces), end="")
+        return 0
     if args.adapter.startswith("reorder"):
         # A conversation is not scored as routing, so it has no scorecard.
         print(
@@ -344,6 +352,54 @@ def cmd_trajectory(args) -> int:
     return 1 if broken else 0
 
 
+def _grounding_names() -> list[str]:
+    from agent_evals import retrieval
+
+    return [r["name"] for r in retrieval.load_corpus(GROUNDING_CORPUS)]
+
+
+GROUNDING_CORPUS = Path(__file__).resolve().parents[2] / "datasets/pkg_corpus_v1.jsonl"
+
+
+def _grounding_text(label, cases, traces) -> str:
+    from agent_evals import grounding
+
+    by_id = {c.case_id: c for c in cases}
+    return grounding.render_summary(label, by_id, traces, _grounding_names())
+
+
+def cmd_grounding_grade(args) -> int:
+    from agent_evals import grounding
+
+    cases = {c.case_id: c for c in load_cases(args.dataset)}
+    traces = [t for run in args.run for t in read_traces(Path(run) / "traces.jsonl")]
+    label = " + ".join(Path(run).name for run in args.run)
+    names = _grounding_names()
+    parts = {
+        "summary": lambda: grounding.render_summary(label, cases, traces, names),
+        "bounds": lambda: grounding.render_bounds(cases, traces, names),
+        "fresh": lambda: grounding.render_fresh(cases, traces),
+        "counterfactual": lambda: grounding.render_counterfactual(cases, traces),
+    }
+    if args.part == "flagged":
+        for trace, hits in grounding.flagged(cases, traces, names):
+            print(f"{trace.case_id} t{trace.trial}: {', '.join(hits)}")
+    else:
+        print(parts[args.part](), end="")
+    # A citation the answer takes from outside what was retrieved breaks the
+    # product's own contract, so it fails the command.
+    broken = any(
+        grounding.check(cases[t.case_id], t, names)["invalid_citation"] for t in traces
+    )
+    return 1 if broken else 0
+
+
+def cmd_grounding_check(args) -> int:
+    from agent_evals import grounding_check
+
+    return grounding_check.main(_grounding_names())
+
+
 def cmd_conversation_check(args) -> int:
     from agent_evals import mechanics
 
@@ -548,6 +604,22 @@ def main(argv: list[str] | None = None) -> int:
     p_cg.add_argument("--run", nargs="+", required=True)
     p_cg.add_argument("--dataset", required=True)
     p_cg.set_defaults(func=cmd_conversation_grade)
+
+    p_gr = sub.add_parser("grounding", help="check answers against what was retrieved")
+    gr_sub = p_gr.add_subparsers(dest="grounding_command", required=True)
+    p_gg = gr_sub.add_parser("grade", help="grade recorded answers")
+    p_gg.add_argument("--run", nargs="+", required=True)
+    p_gg.add_argument("--dataset", required=True)
+    p_gg.add_argument(
+        "--part",
+        choices=("summary", "bounds", "fresh", "counterfactual", "flagged"),
+        default="summary",
+    )
+    p_gg.set_defaults(func=cmd_grounding_grade)
+    p_gc = gr_sub.add_parser(
+        "check", help="the checks, on a faithful script and six faulty ones"
+    )
+    p_gc.set_defaults(func=cmd_grounding_check)
 
     p_ret = sub.add_parser("retrieval", help="score retrieval from recorded embeddings")
     ret_sub = p_ret.add_subparsers(dest="retrieval_command", required=True)
