@@ -89,6 +89,12 @@ The reorder product's approval workflow is a two-turn conversation: a question, 
 
 `datasets/reorder_conversations_v1.jsonl` has 26 questions labeled from the inventory (built by `scripts/build_reorder_conversations.py`). Two recorded live passes (`runs/reorder-conversations-1`, `-2`, from a clean commit): nothing was logged before a decision (0 of 52) or after a rejection (0 of 11), resume never called the model (0 of 26), 50 of 52 conversations paused correctly, and in 4 of the 15 approved orders the product's own `extract_sku` would order the first SKU named in the question, which for two multi-SKU questions is the well-stocked one. The API and job queue were not run (they need Postgres). `reorder-app` is pinned to `ch35-end` for `extract_sku` only.
 
+## Chapter 12: retrieval before generation
+
+`src/agent_evals/retrieval.py` scores the package-intelligence product's search on its own, with no language model. It runs the product's own `ask_rag_agent_for_tenant` and `embed_and_upsert` against an in-memory Qdrant, with a recorded embedder and a no-op model, and reads the results through the product's `on_retrieval` hook. Metrics are hit@k, recall@k, precision@k and reciprocal rank. Baselines are random, alphabetical, BM25 (`rank_bm25`) and reciprocal rank fusion of BM25 with the dense search. `agent-evals retrieval report --run R --queries Q --corpus C --part {methods,kinds,paired,misses,scores}` prints the tables, and `agent-evals retrieval isolation` counts results that belong to another tenant, for one collection per tenant and for a planted shared collection (exits 1 if the product leaks or the planted fault does not).
+
+`datasets/pkg_corpus_v1.jsonl` is 107 PyPI packages fetched on 2026-09-20 (`scripts/build_pkg_corpus.py`). `datasets/pkg_queries_v1.jsonl` (50 questions) and `pkg_queries_v2.jsonl` (62: version 1 plus 12 harder questions added after the first results) are built by `scripts/build_pkg_queries.py`, labeled by one person, 16 labels contested; see `datasets/CHANGELOG.md`. `scripts/record_embeddings.py` is the only step that needs a key: it records the summaries and the questions with the product's own client and again with Gemini task types (`runs/pkg-retrieval-1`, `-2`, from a clean commit). On `-2`, 57 answerable questions: a relevant package in the top 3 for 55 (as shipped) and 56 (task types) against 39 for BM25, 48 for the hybrid and 5 for random. Both shipped misses are contested-label questions, but one of them ("start and stop containers") returns no container library in its top 3. With one collection per tenant 0 of 186 results belonged to the other tenant; with a shared collection 103 did. `scripts/plot_retrieval.py` draws the figures. `pkgintel-app` is pinned to `ch33-end`. Qdrant runs in memory, not as a server.
+
 ## Run it
 
 ```bash
@@ -116,7 +122,7 @@ uv run agent-evals run --adapter triage-live --dataset datasets/triage_book3_six
 
 ## What this does not do yet
 
-One trial per ticket, one product, deterministic graders only. There are no judges, no repeated-trial reliability, no retrieval or multi-agent evaluation, and no online monitoring. Those arrive in later chapters. The recorded run is a single observation of a stochastic system: rerunning it can give a different trace.
+One trial per ticket or question, three products (each in its own chapters), deterministic graders only. There are no judges, no repeated-trial reliability, no answer-level retrieval evaluation (only the search itself), and no online monitoring. Those arrive in later chapters. The recorded run is a single observation of a stochastic system: rerunning it can give a different trace.
 
 ## License
 

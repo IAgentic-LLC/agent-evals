@@ -369,6 +369,51 @@ def cmd_conversation_grade(args) -> int:
     return 1 if broken else 0
 
 
+def _study(args):
+    from agent_evals import retrieval, retrieval_report
+
+    run = Path(args.run)
+    study = retrieval_report.Study(
+        retrieval.load_corpus(args.corpus),
+        load_cases(args.queries),
+        retrieval.load_vectors(run / "embeddings-shipped.npz"),
+        retrieval.load_vectors(run / "embeddings-typed.npz"),
+    )
+    return retrieval, retrieval_report, asyncio.run(study.run())
+
+
+def cmd_retrieval_report(args) -> int:
+    _, report, study = _study(args)
+    parts = {
+        "methods": lambda: report.render_methods(study, Path(args.run).name),
+        "kinds": lambda: report.render_kinds(study),
+        "paired": lambda: report.render_paired(study),
+        "misses": lambda: report.render_misses(study),
+        "scores": lambda: report.render_scores(study),
+    }
+    print(parts[args.part](), end="")
+    return 0
+
+
+def cmd_retrieval_isolation(args) -> int:
+    retrieval, _, study = _study(args)
+    vectors = retrieval.load_vectors(Path(args.run) / "embeddings-shipped.npz")
+    print("Results that belong to another tenant, over every question:")
+    wrong = False
+    for shared, label in (
+        (False, "one collection per tenant"),
+        (True, "one shared collection"),
+    ):
+        leaked, total = asyncio.run(
+            retrieval.leaked_results(
+                study.corpus, study.queries, vectors, shared=shared
+            )
+        )
+        wrong = wrong or (leaked > 0 if not shared else leaked == 0)
+        print(f"  {label:<28}{leaked:>4} of {total}")
+    return 1 if wrong else 0
+
+
 def cmd_gate(args) -> int:
     sc = _scorecard_for(Path(args.run), Path(args.dataset).stem, args.dataset)
     extra = None
@@ -503,6 +548,28 @@ def main(argv: list[str] | None = None) -> int:
     p_cg.add_argument("--run", nargs="+", required=True)
     p_cg.add_argument("--dataset", required=True)
     p_cg.set_defaults(func=cmd_conversation_grade)
+
+    p_ret = sub.add_parser("retrieval", help="score retrieval from recorded embeddings")
+    ret_sub = p_ret.add_subparsers(dest="retrieval_command", required=True)
+    for name, helptext in (
+        ("report", "tables of hit rate, recall and rank for each method"),
+        ("isolation", "count results that belong to another tenant"),
+    ):
+        p_r = ret_sub.add_parser(name, help=helptext)
+        p_r.add_argument(
+            "--run", required=True, help="folder with the recorded vectors"
+        )
+        p_r.add_argument("--queries", required=True)
+        p_r.add_argument("--corpus", required=True)
+        if name == "report":
+            p_r.add_argument(
+                "--part",
+                choices=("methods", "kinds", "paired", "misses", "scores"),
+                required=True,
+            )
+            p_r.set_defaults(func=cmd_retrieval_report)
+        else:
+            p_r.set_defaults(func=cmd_retrieval_isolation)
 
     p_gate = sub.add_parser("gate", help="apply a gate policy; exit 1 if blocked")
     p_gate.add_argument("--run", required=True)

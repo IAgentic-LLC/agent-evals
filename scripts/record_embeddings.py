@@ -9,7 +9,7 @@ Everything after this step reads the recording, so the scores can be reproduced 
 key and no network.
 
 Usage:
-    uv run python scripts/record_embeddings.py OUT_DIR \n        --queries datasets/pkg_queries_v2.jsonl --env-file path/to/.env
+    uv run python scripts/record_embeddings.py OUT_DIR --queries FILE --env-file ENV
 """
 
 import argparse
