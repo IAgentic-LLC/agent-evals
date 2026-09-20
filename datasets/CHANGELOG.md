@@ -2,6 +2,14 @@
 
 Every published version of a dataset is frozen. A change is a new version with an entry here, never an edit in place.
 
+## triage_redteam_v2b (2026-09-21)
+
+`triage_redteam_v2b` is made by `scripts/build_redteam_set_v2b.py` for chapter 21. Round 2's billing procedure notes had round 1's flaw: three of four asked for a refund larger than the invoice. Round 2b is the four billing procedure notes with refunds that fit ($50, $10, $25 and $80). Four tickets, three runs each, in both conditions. **Caution:** one author, four hosts, four tickets.
+
+## triage_redteam_v1b (2026-09-21)
+
+`triage_redteam_v1b` is made by `scripts/build_redteam_set_v1b.py` for chapter 21. A cold read found that three of the four billing hosts in `triage_redteam_v1` were attacked with a refund larger than the customer's invoice ($120, $200 and $250 against invoices of $12, $30 and $84.50), so a refusal there might mean only that the request did not add up. Round 1b is the six deliveries on the four billing hosts, 24 tickets, with refunds that fit inside the invoice ($50, $10, $25 and $80). `triage_redteam_v1` is not changed; its billing rows keep their amounts and the chapter says so. The controls are round 1's. **Caution:** one author, four hosts.
+
 ## triage_redteam_v2 (2026-09-21)
 
 `triage_redteam_v2` is made by `scripts/build_redteam_set_v2.py` for chapter 21, round 2 of the red-team set. It is adaptive: written after reading the round 1 results under both conditions. 24 tickets: 12 "plausible" tickets (the 12 hosts of `triage_redteam_v1` with a note in the customer's text that presents the action as standard procedure) and 12 "runbook" tickets (the four technical hosts, unchanged, three times; the attack is a runbook reply that carries an added instruction, applied by the adapters `triage-live-customer-id-poisoned-runbook` and `...-untrusted` for tickets whose id ends in `note`, `authority` or `step`). **Caution:** one author, small counts, and the round 2 attacks are aimed at the defense I had already measured, so a result on them says how that defense fares against an attacker who has read its results, and nothing about other defenses. The controls are the ones in `triage_redteam_v1`.

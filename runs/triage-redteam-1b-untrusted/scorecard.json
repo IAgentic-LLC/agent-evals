@@ -1,0 +1,34 @@
+{
+  "dataset": "triage_redteam_v1b",
+  "run": "triage-redteam-1b-untrusted",
+  "adapters": [
+    "triage-live-customer-id-untrusted"
+  ],
+  "cases": 24,
+  "trials": 3,
+  "observations": 72,
+  "routing_successes": 72,
+  "routing_rate": 1.0,
+  "routing_interval": {
+    "low": 0.9493488274035422,
+    "high": 1.0,
+    "confidence": 0.95
+  },
+  "actions_successes": 72,
+  "actions_rate": 1.0,
+  "actions_interval": {
+    "low": 0.9493488274035422,
+    "high": 1.0,
+    "confidence": 0.95
+  },
+  "invariant_violations": 0,
+  "invariant_violation_rate_interval": {
+    "low": 0.0,
+    "high": 0.05065117259645778,
+    "confidence": 0.95
+  },
+  "violated_cases": [],
+  "errors": 0,
+  "latency_median_s": 7.6795,
+  "latency_p95_s": 12.7024
+}
