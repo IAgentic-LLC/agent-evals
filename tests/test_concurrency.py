@@ -168,3 +168,26 @@ async def test_the_customer_id_patch_applies_once_however_many_runs_overlap():
     assert len(client.questions) == 12
     assert all(q.count("Customer ID:") == 1 for q in client.questions)
     assert specialists._question_for is original_question
+
+
+async def test_a_crashing_adapter_cancels_the_other_runs_and_restores_the_product():
+    before = list(specialists.TECHNICAL_TOOLS)
+    finished: list[str] = []
+
+    class Crashing(RegressedAdapter):
+        async def run(self, case: EvalCase, trial: int) -> Trace:
+            if case.case_id == "TCK-1002":
+                raise RuntimeError("adapter bug")
+            await asyncio.sleep(0.2)
+            finished.append(case.case_id)
+            return await super().run(case, trial)
+
+    cases = load_cases(DATASET)
+    try:
+        await run_cases(cases, Crashing(), concurrency=6)
+    except* RuntimeError:
+        pass
+    else:
+        raise AssertionError("the adapter bug should have surfaced")
+    assert finished == []  # the other runs were cancelled, not left running
+    assert specialists.TECHNICAL_TOOLS == before

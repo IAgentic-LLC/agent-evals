@@ -32,6 +32,15 @@ uv run agent-evals stats --run runs/triage-live-shipped --dataset datasets/triag
 uv run agent-evals stats --run runs/triage-live-customer-id --dataset datasets/triage_book3_six.jsonl
 ```
 
+## Chapter 3: the harness checks itself
+
+Runs can overlap (`--concurrency N`), and every run writes a `manifest.json` with the dataset hash, the model, the exact commit of the product and of the harness, the settings and the wall time. Overlap exposed two ways the harness would have given wrong answers, both reproduced by `scripts/concurrency_probes.py` and pinned by `tests/test_concurrency.py`:
+
+- The product records actions in a context-local list. If the caller touched it before the runs started, every run shared one list. Each run now binds its own.
+- An adapter that patched the product for each run left it patched when runs overlapped (the technical specialist ended with seven tools instead of two). Adapters now patch once per batch in `__enter__` and undo it in `__exit__`.
+
+Recorded live runs: `runs/triage-live-3x-sequential` and `runs/triage-live-3x-concurrent`, 18 runs each (6 tickets, 3 trials): 107.72 s against 23.77 s, the same scores.
+
 ## Run it
 
 ```bash

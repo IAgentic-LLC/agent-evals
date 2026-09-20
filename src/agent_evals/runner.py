@@ -40,6 +40,10 @@ async def run_cases(
     Traces come back in case-then-trial order whatever order the runs finish in.
     An adapter that changes the product under test does it in `__enter__` and
     undoes it in `__exit__`, so the change happens once for the whole run.
+
+    If an adapter raises, the remaining runs are cancelled and the product is
+    restored before the error (an ExceptionGroup) reaches the caller. A failed
+    product run is a result and never raises here; this is for adapter bugs.
     """
     gate = asyncio.Semaphore(concurrency)
 
@@ -47,9 +51,14 @@ async def run_cases(
         async with gate:
             return await adapter.run(case, trial)
 
-    jobs = [one(case, trial) for case in cases for trial in range(1, trials + 1)]
     with adapter if hasattr(adapter, "__enter__") else nullcontext():
-        return list(await asyncio.gather(*jobs))
+        async with asyncio.TaskGroup() as group:
+            tasks = [
+                group.create_task(one(case, trial))
+                for case in cases
+                for trial in range(1, trials + 1)
+            ]
+    return [task.result() for task in tasks]
 
 
 def dump_json(path: str | Path, payload: dict) -> None:

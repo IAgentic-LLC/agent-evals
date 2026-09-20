@@ -1,0 +1,34 @@
+{
+  "dataset": "triage_book3_six",
+  "run": "triage-live-3x-sequential",
+  "adapters": [
+    "triage-live"
+  ],
+  "cases": 6,
+  "trials": 3,
+  "observations": 18,
+  "routing_successes": 18,
+  "routing_rate": 1.0,
+  "routing_interval": {
+    "low": 0.8241207763533425,
+    "high": 1.0,
+    "confidence": 0.95
+  },
+  "actions_successes": 12,
+  "actions_rate": 0.6666666666666666,
+  "actions_interval": {
+    "low": 0.437494672959451,
+    "high": 0.8372122524916629,
+    "confidence": 0.95
+  },
+  "invariant_violations": 0,
+  "invariant_violation_rate_interval": {
+    "low": 0.0,
+    "high": 0.17587922364665756,
+    "confidence": 0.95
+  },
+  "violated_cases": [],
+  "errors": 0,
+  "latency_median_s": 6.1315,
+  "latency_p95_s": 9.083199999999998
+}
