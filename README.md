@@ -41,6 +41,12 @@ Runs can overlap (`--concurrency N`), and every run writes a `manifest.json` wit
 
 Recorded live runs: `runs/triage-live-3x-sequential` and `runs/triage-live-3x-concurrent`, 18 runs each (6 tickets, 3 trials): 107.72 s against 23.77 s, the same scores.
 
+## Chapter 4: a test set the product has not seen
+
+The six tickets are the product's development examples (the `app crash` runbook entry arrived in the same commit as the first seed ticket), so they are marked `split: dev`. `datasets/triage_heldout_v1.jsonl` is 42 tickets I wrote afterwards, frozen before the first run. `agent-evals dataset check` reports structure, slice sizes and leakage (word overlap, and embedding similarity calibrated with known paraphrases in `datasets/leakage_controls.jsonl`); `agent-evals stats --by KEY` prints a table per slice. See `datasets/triage_heldout.card.md` and `datasets/CHANGELOG.md`.
+
+The first run on the test set (`runs/triage-heldout-v1`, with the chapter 2 fix): routing 30/42 against 6/6 on the development six. Billing 13/13 and security 12/12 route correctly; the technical specialist routes 5/17, because its runbook search only matches the words `app crash` and `login` and the specialist then loops until the tool-round limit. Version 2 of the set (`triage_heldout_v2.jsonl`) corrects two of my labels and marks two as contested; the recorded run can be rescored against it, and the harness says so when the dataset has changed since the run.
+
 ## Run it
 
 ```bash
