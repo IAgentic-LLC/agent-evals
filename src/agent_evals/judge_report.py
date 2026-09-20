@@ -261,3 +261,53 @@ def render_flips(items, base_rows, perturbed_items, perturbed_rows, split=None) 
             if pairs:
                 lines.append(_flip_row(kind, group, pairs))
     return "\n".join(lines) + "\n"
+
+
+def render_judges(
+    items, named_rows: dict[str, list[dict]], split: str | None = None
+) -> str:
+    """Several judges on the same items, side by side."""
+    tallies = {name: _tally(items, rows, split) for name, rows in named_rows.items()}
+    order = (
+        "with praise added",
+        "with fact added",
+        "with capability added",
+        "planted originals, clean",
+        "real, my reading: supported",
+        "real, my reading: borderline",
+        "real, my reading: stretch",
+    )
+    names = list(named_rows)
+    head = f"{'judge said unsupported':<32}" + "".join(f"{n:>15}" for n in names)
+    lines = [head]
+    for label in order:
+        cells = []
+        for name in names:
+            c = tallies[name][label]
+            cells.append(f"{c['said']} of {c['n']}" if c["n"] else "-")
+        if any(x != "-" for x in cells):
+            lines.append(f"{label:<32}" + "".join(f"{c:>15}" for c in cells))
+    return "\n".join(lines) + "\n"
+
+
+def render_agreement(
+    items, named_rows: dict[str, list[dict]], split: str | None = None
+) -> str:
+    """How often two judges give the same first-pass verdict on the same item."""
+    items = resplit(items, split)
+    keep = {i["item_id"] for i in items if _keep(i, split)}
+    first = {
+        name: {
+            r["item_id"]: r["verdict"] for r in rows if r["pass"] == 1 and r["verdict"]
+        }
+        for name, rows in named_rows.items()
+    }
+    names = list(named_rows)
+    lines = [f"{'first pass, same verdict':<32}{'items':>7}{'agree':>20}"]
+    for a in range(len(names)):
+        for b in range(a + 1, len(names)):
+            both = [i for i in keep if i in first[names[a]] and i in first[names[b]]]
+            same = sum(first[names[a]][i] == first[names[b]][i] for i in both)
+            label = f"{names[a]} and {names[b]}"
+            lines.append(f"{label:<32}{len(both):>7}{_cell(same, len(both)):>20}")
+    return "\n".join(lines) + "\n"

@@ -514,7 +514,8 @@ def _judge_model_config(model: str | None = None):
 def cmd_judge_perturb(args) -> int:
     from agent_evals import bias
 
-    changed = bias.perturb_all(judge.load_items(args.items))
+    kinds = bias.ATTACKS if args.set == "attacks" else bias.PERTURBATIONS
+    changed = bias.perturb_all(judge.load_items(args.items), kinds)
     Path(args.out).write_text(
         "".join(
             json.dumps(i, ensure_ascii=False, separators=(",", ":")) + "\n"
@@ -536,6 +537,20 @@ def cmd_judge_report(args) -> int:
         moved = judge_report.load_rows([args.perturbed_run])
         changed = judge.load_items(args.perturbed_items)
         print(judge_report.render_flips(items, base, changed, moved, split), end="")
+        return 0
+    if args.part == "agreement":
+        named = {
+            Path(r).name.replace("judge-", ""): judge_report.load_rows([r])
+            for r in args.run
+        }
+        print(judge_report.render_agreement(items, named, split), end="")
+        return 0
+    if args.part == "judges":
+        named = {
+            Path(r).name.replace("judge-", ""): judge_report.load_rows([r])
+            for r in args.run
+        }
+        print(judge_report.render_judges(items, named, split), end="")
         return 0
     if args.part == "compare":
         first, second = (judge_report.load_rows([r]) for r in args.run)
@@ -802,6 +817,7 @@ def main(argv: list[str] | None = None) -> int:
     p_jb = ju_sub.add_parser("perturb", help="make changed copies of the items")
     p_jb.add_argument("--items", required=True)
     p_jb.add_argument("--out", required=True)
+    p_jb.add_argument("--set", choices=("basic", "attacks"), default="basic")
     p_jb.set_defaults(func=cmd_judge_perturb)
     p_jp = ju_sub.add_parser("report", help="read recorded verdicts")
     p_jp.add_argument("--run", nargs="+", required=True)
@@ -823,6 +839,8 @@ def main(argv: list[str] | None = None) -> int:
             "disagreements",
             "compare",
             "flips",
+            "judges",
+            "agreement",
         ),
         required=True,
     )

@@ -1,0 +1,25 @@
+{
+  "judge_model": {
+    "provider": "gemini",
+    "model_id": "gemini-3.8-flash"
+  },
+  "prompt": {
+    "version": "v2",
+    "sha256": "710c525ca5006a853d4049e982d37c9ffdd73f50c811297c24b54e8368493112",
+    "text": "You check whether an answer is supported by the package information it was given. You will see the package information, a question and an answer. List every claim the answer makes about a package or about the world. For each claim, say whether the package information states it, or states it in other words. A claim is unsupported if the package information does not state it, even if it is true, or if it contradicts the package information. Respond with a single JSON object, no markdown fences: {\"claims\": [{\"claim\": \"...\", \"supported\": true or false}], \"verdict\": \"supported\" or \"unsupported\"}. The verdict is \"unsupported\" if any claim is unsupported. If the answer only says that the information is not enough, it makes no claims, and the verdict is \"supported\". Do not count a claim as unsupported only because it says a package can be used for what its description says it does, or applies the question's own words to that job. For example, if the description says \"A database migration tool for SQLAlchemy\", saying that the package can be used to manage database schema changes is supported. Do count a claim as unsupported when it adds a fact, a comparison, an opinion or an ability that the description does not state."
+  },
+  "items": {
+    "path": "datasets/judge_items_v1.jsonl",
+    "sha256": "be13bd06763c4f4d4c522190b5e47de5640ee9565a2c9d1e2cd700c44bc784c4",
+    "count": 137,
+    "split": null
+  },
+  "passes": 2,
+  "concurrency": 6,
+  "started_at": "2026-09-20T16:21:19+00:00",
+  "wall_seconds": 87.64,
+  "harness": {
+    "commit": "f1a8cff1dbf6b0214288f98ef8e0a3c51ae4da1c",
+    "dirty": false
+  }
+}
