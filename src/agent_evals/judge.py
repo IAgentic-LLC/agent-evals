@@ -50,7 +50,8 @@ PROMPT_V3 = (
     "package information that state it, copied exactly. Leave it empty for an "
     "unsupported claim."
 )
-VERSIONS = {"v1": PROMPT_V1, "v2": PROMPT_V2, "v3": PROMPT_V3}
+# `v3u` is version 3 without the code check, to see which half of the defense works.
+VERSIONS = {"v1": PROMPT_V1, "v2": PROMPT_V2, "v3": PROMPT_V3, "v3u": PROMPT_V3}
 # Versions whose supported claims must quote the package information. Code checks it.
 CHECKED = ("v3",)
 
