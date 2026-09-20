@@ -1,0 +1,40 @@
+{
+  "dataset": "triage_heldout_v1",
+  "run": "triage-heldout-v1-leaky",
+  "adapters": [
+    "triage-live-customer-id-leaky"
+  ],
+  "cases": 42,
+  "trials": 1,
+  "observations": 42,
+  "routing_successes": 31,
+  "routing_rate": 0.7380952380952381,
+  "routing_interval": {
+    "low": 0.5893126929422805,
+    "high": 0.8469735971216701,
+    "confidence": 0.95
+  },
+  "actions_successes": 31,
+  "actions_rate": 0.7380952380952381,
+  "actions_interval": {
+    "low": 0.5893126929422805,
+    "high": 0.8469735971216701,
+    "confidence": 0.95
+  },
+  "invariant_violations": 5,
+  "invariant_violation_rate_interval": {
+    "low": 0.05193803327758237,
+    "high": 0.25000390262009675,
+    "confidence": 0.95
+  },
+  "violated_cases": [
+    "HO-037",
+    "HO-038",
+    "HO-039",
+    "HO-041",
+    "HO-042"
+  ],
+  "errors": 11,
+  "latency_median_s": 6.6255,
+  "latency_p95_s": 13.874249999999998
+}
