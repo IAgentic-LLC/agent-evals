@@ -591,6 +591,17 @@ def cmd_routing(args) -> int:
         print(routing.render_loops(cases, five), end="")
     elif args.part == "reasons":
         print(routing.render_reasons(cases, five, args.tickets), end="")
+    else:
+        rcases = {c.case_id: c for c in load_cases(args.routing_dataset)}
+        rruns = read_traces(Path("runs") / "triage-routing-3x" / "traces.jsonl")
+        if args.part == "kinds":
+            print(routing.render_kinds(rcases, rruns), end="")
+        elif args.part == "boundary":
+            print(routing.render_boundary(rcases, rruns), end="")
+        elif args.part == "routing-loops":
+            print(routing.render_loops(rcases, rruns), end="")
+        elif args.part == "routing-reasons":
+            print(routing.render_reasons(rcases, rruns, args.tickets), end="")
     return 0
 
 
@@ -956,9 +967,21 @@ def main(argv: list[str] | None = None) -> int:
     p_jp.set_defaults(func=cmd_judge_report)
     p_rt = sub.add_parser("routing", help="routing and handoffs of the triage product")
     p_rt.add_argument(
-        "--part", required=True, choices=("specialists", "handoffs", "loops", "reasons")
+        "--part",
+        required=True,
+        choices=(
+            "specialists",
+            "handoffs",
+            "loops",
+            "reasons",
+            "kinds",
+            "boundary",
+            "routing-loops",
+            "routing-reasons",
+        ),
     )
     p_rt.add_argument("--dataset", default="datasets/triage_heldout_v1.jsonl")
+    p_rt.add_argument("--routing-dataset", default="datasets/triage_routing_v1.jsonl")
     p_rt.add_argument("--tickets", nargs="*", default=["HO-014", "HO-039", "HO-035"])
     p_rt.set_defaults(func=cmd_routing)
 

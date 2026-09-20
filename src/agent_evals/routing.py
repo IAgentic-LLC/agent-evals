@@ -130,3 +130,60 @@ def render_reasons(
                 ]
                 break
     return "\n".join(lines) + "\n"
+
+
+def acceptable(case: EvalCase) -> list[str]:
+    """The specialists I would accept: the expected one, plus any listed as acceptable."""
+    return [
+        case.expected["handled_by"],
+        *[
+            a
+            for a in case.expected.get("acceptable", [])
+            if a != case.expected["handled_by"]
+        ],
+    ]
+
+
+def render_kinds(cases: dict[str, EvalCase], traces: list[Trace]) -> str:
+    """The routing set by kind of ticket: strict is the expected specialist, lenient
+    is any I would accept."""
+    lines = [
+        f"{'kind':<12}{'tickets':>8}{'runs':>6}{'asked':>7}{'strict':>8}"
+        + f"{'lenient':>9}{'wrong':>7}{'error':>7}{'loops':>7}"
+    ]
+    for kind in ("misfiled", "boundary", "distractor"):
+        mine = [t for t in traces if cases[t.case_id].slices["kind"] == kind]
+        strict = lenient = wrong = err = loops = 0
+        for t in mine:
+            case = cases[t.case_id]
+            state = where(case, t)
+            strict += state == "right"
+            lenient += state != "error" and t.handled_by in acceptable(case)
+            wrong += state == "wrong" and t.handled_by not in acceptable(case)
+            err += state == "error"
+            loops += bool(t.error and t.error.startswith("HandoffLoopDetected"))
+        lines.append(
+            f"{kind:<12}{len({t.case_id for t in mine}):>8}{len(mine):>6}"
+            f"{sum(bool(handoffs(t)) for t in mine):>7}{strict:>8}{lenient:>9}"
+            f"{wrong:>7}{err:>7}{loops:>7}"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def render_boundary(cases: dict[str, EvalCase], traces: list[Trace]) -> str:
+    """Each boundary ticket: what I expected, what I would accept, where its runs ended."""
+    lines = [f"{'ticket':<8}{'category':<11}{'expected':<11}{'ended, run by run'}"]
+    for case_id in sorted(cases):
+        case = cases[case_id]
+        if case.slices["kind"] != "boundary":
+            continue
+        ends = [
+            (t.handled_by if t.handled_by and not t.error else "error")
+            for t in sorted(traces, key=lambda t: t.trial)
+            if t.case_id == case_id
+        ]
+        lines.append(
+            f"{case_id:<8}{case.input['category']:<11}{case.expected['handled_by']:<11}"
+            + ", ".join(ends)
+        )
+    return "\n".join(lines) + "\n"
