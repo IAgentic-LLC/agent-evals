@@ -446,12 +446,11 @@ def cmd_judge_run(args) -> int:
         load_dotenv(args.env_file)
     if not os.environ.get("GEMINI_API_KEY"):
         raise SystemExit("judge run needs GEMINI_API_KEY (use --env-file or export it)")
-    from reliable_agents_labs.models import build_model_client
 
     items = judge.load_items(args.items)
     if args.split:
         items = [i for i in items if i["split"] == args.split]
-    client = build_model_client("judge_model")
+    client = _judge_client(args.model)
     harness, started, clock = harness_state(), now(), time.perf_counter()
     rows = asyncio.run(
         judge.judge_all(
@@ -467,7 +466,7 @@ def cmd_judge_run(args) -> int:
     dump_json(
         out / "manifest.json",
         {
-            "judge_model": _judge_model_config(),
+            "judge_model": _judge_model_config(args.model),
             "prompt": {
                 "version": args.version,
                 "sha256": judge.prompt_hash(args.version),
@@ -490,18 +489,54 @@ def cmd_judge_run(args) -> int:
     return 0
 
 
-def _judge_model_config():
+def _judge_client(model: str | None):
+    from reliable_agents_labs.models import (
+        GeminiOpenAICompatibleClient,
+        build_model_client,
+    )
+
+    if model:
+        return GeminiOpenAICompatibleClient(model_id=model)
+    return build_model_client("judge_model")
+
+
+def _judge_model_config(model: str | None = None):
     import yaml
+
+    if model:
+        return {"provider": "gemini", "model_id": model, "override": True}
 
     text = Path("config/models.yaml").read_text(encoding="utf8")
     role = yaml.safe_load(text)["judge_model"]
     return {"provider": role.get("provider"), "model_id": role.get("model_id")}
 
 
+def cmd_judge_perturb(args) -> int:
+    from agent_evals import bias
+
+    changed = bias.perturb_all(judge.load_items(args.items))
+    Path(args.out).write_text(
+        "".join(
+            json.dumps(i, ensure_ascii=False, separators=(",", ":")) + "\n"
+            for i in changed
+        ),
+        encoding="utf8",
+        newline="\n",
+    )
+    print(f"wrote {len(changed)} changed items to {args.out}")
+    return 0
+
+
 def cmd_judge_report(args) -> int:
     items = judge.load_items(args.items)
     rows = judge_report.load_rows(args.run)
     split = args.split
+    if args.part == "flips":
+        base = judge_report.load_rows([args.run[0]])
+        moved = judge_report.load_rows([args.perturbed_run])
+        changed = judge.load_items(args.perturbed_items)
+        print(judge_report.render_flips(items, base, changed, moved, split), end="")
+        return 0
     if args.part == "compare":
         first, second = (judge_report.load_rows([r]) for r in args.run)
         names = [Path(r).name for r in args.run]
@@ -762,18 +797,33 @@ def main(argv: list[str] | None = None) -> int:
     p_jr.add_argument("--concurrency", type=int, default=6)
     p_jr.add_argument("--split", choices=("dev", "test"))
     p_jr.add_argument("--env-file")
+    p_jr.add_argument("--model", help="judge with this model id instead of the config")
     p_jr.set_defaults(func=cmd_judge_run)
+    p_jb = ju_sub.add_parser("perturb", help="make changed copies of the items")
+    p_jb.add_argument("--items", required=True)
+    p_jb.add_argument("--out", required=True)
+    p_jb.set_defaults(func=cmd_judge_perturb)
     p_jp = ju_sub.add_parser("report", help="read recorded verdicts")
     p_jp.add_argument("--run", nargs="+", required=True)
     p_jp.add_argument("--items", required=True)
     p_jp.add_argument("--split", choices=("dev", "test", "unseen"))
+    p_jp.add_argument("--perturbed-items")
+    p_jp.add_argument("--perturbed-run")
     p_jp.add_argument("--price-in", type=float, help="dollars per million input tokens")
     p_jp.add_argument(
         "--price-out", type=float, help="dollars per million output tokens"
     )
     p_jp.add_argument(
         "--part",
-        choices=("planted", "real", "retest", "cost", "disagreements", "compare"),
+        choices=(
+            "planted",
+            "real",
+            "retest",
+            "cost",
+            "disagreements",
+            "compare",
+            "flips",
+        ),
         required=True,
     )
     p_jp.set_defaults(func=cmd_judge_report)

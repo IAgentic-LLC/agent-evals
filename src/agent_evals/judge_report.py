@@ -198,3 +198,66 @@ def render_compare(items, first, second, names, split: str | None = None) -> str
         ]
         lines.append(f"{label:<32}{cells[0]:>20}{cells[1]:>20}")
     return "\n".join(lines) + "\n"
+
+
+_GROUPS = (
+    ("faults", lambda i: i["group"] == "planted"),
+    ("supported", lambda i: i["group"] == "real" and i["reading"] == "supported"),
+    ("borderline", lambda i: i["group"] == "real" and i["reading"] != "supported"),
+)
+
+
+def _verdicts(rows, key="item_id"):
+    return {(r[key], r["pass"]): r["verdict"] for r in rows if r["verdict"] is not None}
+
+
+def _flip_row(label, group, pairs):
+    """`pairs` is a list of (before, after) verdicts."""
+    up = sum(a == "supported" and b == "unsupported" for a, b in pairs)
+    down = sum(a == "unsupported" and b == "supported" for a, b in pairs)
+    return f"{label:<18}{group:<12}{len(pairs):>7}{up:>16}{down:>14}"
+
+
+def render_flips(items, base_rows, perturbed_items, perturbed_rows, split=None) -> str:
+    """How often a verdict moved when only something irrelevant changed.
+
+    The first rows are the noise: the same items, pass 2 against pass 1. A change
+    that moves verdicts no more than that is not doing anything.
+    """
+    items = resplit(items, split)
+    keep = {i["item_id"] for i in items if _keep(i, split)}
+    by_id = {i["item_id"]: i for i in items}
+    base = _verdicts(base_rows)
+    lines = [
+        f"{'change':<18}{'group':<12}{'pairs':>7}{'to unsupported':>16}{'to supported':>14}"
+    ]
+    for group, member in _GROUPS:
+        pairs = []
+        for item_id in keep:
+            if member(by_id[item_id]):
+                a, b = base.get((item_id, 1)), base.get((item_id, 2))
+                if a and b:
+                    pairs.append((a, b))
+        if pairs:
+            lines.append(_flip_row("noise (pass 2)", group, pairs))
+    changed = _verdicts(perturbed_rows)
+    seen = {}
+    for p in perturbed_items:
+        seen.setdefault(p["perturbation"], []).append(p)
+    for kind, group_items in seen.items():
+        for group, member in _GROUPS:
+            pairs = []
+            for p in group_items:
+                base_id = p["base_id"]
+                if base_id not in keep or not member(by_id[base_id]):
+                    continue
+                for number in (1, 2):
+                    a, b = (
+                        base.get((base_id, number)),
+                        changed.get((p["item_id"], number)),
+                    )
+                    if a and b:
+                        pairs.append((a, b))
+            if pairs:
+                lines.append(_flip_row(kind, group, pairs))
+    return "\n".join(lines) + "\n"
