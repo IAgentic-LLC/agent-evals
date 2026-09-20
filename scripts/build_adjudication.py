@@ -1,8 +1,8 @@
 """Write my decisions on the answers where judges and I disagree (datasets/judge_adjudication_v1.jsonl), chapter 17.
 
-The queue is every real answer where the majority of five judge runs, over both passes,
-disagrees with my reading: I read supported and at least 4 of 10 verdicts said
-unsupported, or I read borderline or stretch and at most 5 of 10 said unsupported. There
+The queue is every real answer where the judges lean against my reading, over five judge
+runs and both passes: I read supported and at least 4 of 10 verdicts said unsupported, or
+I read borderline or stretch and at most 5 of 10 said unsupported. There
 are seven, from four questions. I read each one again, with the judges' claim lists next
 to it, and wrote down what I decided and why.
 

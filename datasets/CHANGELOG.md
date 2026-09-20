@@ -4,7 +4,7 @@ Every published version of a dataset is frozen. A change is a new version with a
 
 ## judge_adjudication_v1 and human_label_sample_v1 (2026-09-20)
 
-`judge_adjudication_v1` is made by `scripts/build_adjudication.py` for chapter 17: my decision on each of the 7 real answers where the majority of five judge runs over both passes disagrees with my reading. Two change (`pkg-answers-1:PQ-013` and `pkg-answers-2:PQ-013`, supported to borderline, because the summary of SQLAlchemy does not mention Postgres). The readings file itself is not changed. **Caution:** the same person made the readings and the adjudication, after seeing the judges, which is the weakest adjudication there is.
+`judge_adjudication_v1` is made by `scripts/build_adjudication.py` for chapter 17: my decision on each of the 7 real answers where the judges lean against my reading (at least 4 of 10 verdicts unsupported for an answer I read as supported, at most 5 of 10 for one I read as borderline or stretch). Two change (`pkg-answers-1:PQ-013` and `pkg-answers-2:PQ-013`, supported to borderline, because the summary of SQLAlchemy does not mention Postgres). The readings file itself is not changed. **Caution:** the same person made the readings and the adjudication, after seeing the judges, which is the weakest adjudication there is.
 
 `human_label_sample_v1` is made by `scripts/build_label_sample.py` (seed 1): 50 items from `judge_items_v1` for a second person to label blind: 7 I read as borderline or stretch, 4 I read as supported that a judge flagged, 31 supported (one per question) and 8 planted faults. The page `label-tool/index.html` shows the question, the package information and the answer, and no label. The stratum column is for the analysis and is not shown to the labeler.
 

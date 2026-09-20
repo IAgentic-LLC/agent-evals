@@ -199,7 +199,7 @@ def test_the_calibration_half_holds_one_bad_answer_and_the_correction_goes_wrong
 
 def test_the_plan_table_flattens_when_the_test_set_is_small():
     text = labels.render_plan(0.85, 0.97, 0.08, (50, 100, 200, 400, 800), (100, 400))
-    _has(text, "50 21.6 pts 19.1 pts", "800 14.6 pts 7.9 pts")
+    _has(text, "50 22.0 pts 19.2 pts", "800 14.9 pts 7.9 pts")
 
 
 # ------------------------------------------------------- the second person's page

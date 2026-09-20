@@ -141,7 +141,7 @@ def planning_widths(
     prevalence: float,
     test_size: int,
     sizes: tuple[int, ...],
-    resamples: int = 400,
+    resamples: int = 2000,
     seed: int = 0,
 ) -> list[tuple[int, float]]:
     """How wide the interval on the corrected rate is, for calibration sets of each size,
