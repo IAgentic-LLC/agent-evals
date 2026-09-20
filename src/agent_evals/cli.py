@@ -502,6 +502,11 @@ def cmd_judge_report(args) -> int:
     items = judge.load_items(args.items)
     rows = judge_report.load_rows(args.run)
     split = args.split
+    if args.part == "compare":
+        first, second = (judge_report.load_rows([r]) for r in args.run)
+        names = [Path(r).name for r in args.run]
+        print(judge_report.render_compare(items, first, second, names, split), end="")
+        return 0
     if args.part == "disagreements":
         for item, claim in judge_report.disagreements(items, rows, split):
             print(f"{item['item_id']}: {claim}")
@@ -764,7 +769,7 @@ def main(argv: list[str] | None = None) -> int:
     p_jp.add_argument("--split", choices=("dev", "test"))
     p_jp.add_argument(
         "--part",
-        choices=("planted", "real", "retest", "cost", "disagreements"),
+        choices=("planted", "real", "retest", "cost", "disagreements", "compare"),
         required=True,
     )
     p_jp.set_defaults(func=cmd_judge_report)

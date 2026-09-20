@@ -123,3 +123,49 @@ def disagreements(items, rows, split: str | None = None) -> list[tuple[dict, str
         claims = [c["claim"] for c in rs[0]["claims"] if not c.get("supported", True)]
         out.append((item, claims[0] if claims else ""))
     return out
+
+
+def _tally(items, rows, split):
+    """For each kind of item, how many verdicts said `unsupported`, and how many there were."""
+    by_item = _by_item(items)
+    counts: dict[str, Counter] = defaultdict(Counter)
+    for r in rows:
+        item = by_item[r["item_id"]]
+        if not _keep(item, split) or r["verdict"] is None:
+            continue
+        said = r["verdict"] == "unsupported"
+        labels = []
+        if item["group"] == "planted":
+            labels.append(f"with {item['kind']} added")
+        else:
+            if item["clean_of_planted"]:
+                labels.append("planted originals, clean")
+            labels.append(f"real, my reading: {item['reading']}")
+        for label in labels:
+            counts[label]["n"] += 1
+            counts[label]["said"] += said
+    return counts
+
+
+def render_compare(items, first, second, names, split: str | None = None) -> str:
+    """Two judge versions side by side on the same items."""
+    one, two = _tally(items, first, split), _tally(items, second, split)
+    order = (
+        "with praise added",
+        "with fact added",
+        "with capability added",
+        "planted originals, clean",
+        "real, my reading: supported",
+        "real, my reading: borderline",
+        "real, my reading: stretch",
+    )
+    lines = [f"{'judge said unsupported':<32}{names[0]:>13}{names[1]:>13}"]
+    for label in order:
+        if label not in one and label not in two:
+            continue
+        cells = [
+            f"{c[label]['said']} of {c[label]['n']}" if c[label]["n"] else "-"
+            for c in (one, two)
+        ]
+        lines.append(f"{label:<32}{cells[0]:>13}{cells[1]:>13}")
+    return "\n".join(lines) + "\n"

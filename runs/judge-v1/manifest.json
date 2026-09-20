@@ -1,0 +1,25 @@
+{
+  "judge_model": {
+    "provider": "gemini",
+    "model_id": "gemini-3.8-flash"
+  },
+  "prompt": {
+    "version": "v1",
+    "sha256": "6320f7dec6ea62957895d71b07d3be7add16ba0bae93ad49b792f8808b60aa3a",
+    "text": "You check whether an answer is supported by the package information it was given. You will see the package information, a question and an answer. List every claim the answer makes about a package or about the world. For each claim, say whether the package information states it, or states it in other words. A claim is unsupported if the package information does not state it, even if it is true, or if it contradicts the package information. Respond with a single JSON object, no markdown fences: {\"claims\": [{\"claim\": \"...\", \"supported\": true or false}], \"verdict\": \"supported\" or \"unsupported\"}. The verdict is \"unsupported\" if any claim is unsupported. If the answer only says that the information is not enough, it makes no claims, and the verdict is \"supported\"."
+  },
+  "items": {
+    "path": "datasets/judge_items_v1.jsonl",
+    "sha256": "be13bd06763c4f4d4c522190b5e47de5640ee9565a2c9d1e2cd700c44bc784c4",
+    "count": 137,
+    "split": null
+  },
+  "passes": 2,
+  "concurrency": 6,
+  "started_at": "2026-09-20T15:40:22+00:00",
+  "wall_seconds": 101.69,
+  "harness": {
+    "commit": "978a3bc46ee3c3780361924c22fda51c17c77fc0",
+    "dirty": false
+  }
+}

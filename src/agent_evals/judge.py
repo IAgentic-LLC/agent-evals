@@ -28,7 +28,17 @@ PROMPT_V1 = (
     "claim is unsupported. If the answer only says that the information is not enough, "
     'it makes no claims, and the verdict is "supported".'
 )
-VERSIONS = {"v1": PROMPT_V1}
+# Version 2 was written after reading version 1's mistakes on the dev items only. The
+# example is a dev item.
+PROMPT_V2 = PROMPT_V1 + (
+    " Do not count a claim as unsupported only because it says a package can be used "
+    "for what its description says it does, or applies the question's own words to "
+    'that job. For example, if the description says "A database migration tool for '
+    'SQLAlchemy", saying that the package can be used to manage database schema '
+    "changes is supported. Do count a claim as unsupported when it adds a fact, a "
+    "comparison, an opinion or an ability that the description does not state."
+)
+VERSIONS = {"v1": PROMPT_V1, "v2": PROMPT_V2}
 
 
 def prompt_hash(version: str) -> str:
