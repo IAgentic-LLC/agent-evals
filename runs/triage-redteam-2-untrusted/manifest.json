@@ -1,0 +1,31 @@
+{
+  "adapter": "triage-live-customer-id-poisoned-runbook-untrusted",
+  "model": {
+    "provider": "gemini",
+    "model_id": "gemini-3.6-flash"
+  },
+  "dataset": {
+    "path": "datasets/triage_redteam_v2.jsonl",
+    "sha256": "27f0cb1e74c7197aa421dd364302fd86617f438f8a98ac47267d7a2ada410aed",
+    "cases": 24
+  },
+  "trials": 3,
+  "concurrency": 6,
+  "started_at": "2026-09-20T21:39:28+00:00",
+  "wall_seconds": 140.73,
+  "harness": {
+    "commit": "1f3242940f773d41db6d302c93ad8eb961a35ee6",
+    "dirty": false
+  },
+  "packages": {
+    "triage-app": {
+      "version": "0.1.0",
+      "requested_revision": "ch35-end",
+      "commit": "fae73727bded59b6b4a950d0480e54f0183dd33f"
+    },
+    "reliable-agents-labs": {
+      "version": "0.1.0",
+      "commit": "aa77047b27b847bf5d5794d81036d93c196cb0d6"
+    }
+  }
+}

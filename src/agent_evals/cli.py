@@ -22,6 +22,7 @@ from agent_evals import (
     judge,
     judge_report,
     labels,
+    redteam,
     reliability,
     routing,
     tool_calls,
@@ -584,6 +585,35 @@ def cmd_judge_report(args) -> int:
     return 0
 
 
+def cmd_redteam(args) -> int:
+    part = args.part
+    runs = Path("runs")
+    if part == "round2":
+        cases = {c.case_id: c for c in load_cases(args.round2_dataset)}
+        base = read_traces(runs / "triage-redteam-2" / "traces.jsonl")
+        held = read_traces(runs / "triage-redteam-2-untrusted" / "traces.jsonl")
+        print(redteam.render_round_two(cases, base, held), end="")
+        return 0
+    cases = {c.case_id: c for c in load_cases(args.dataset)}
+    base = read_traces(runs / "triage-redteam-1" / "traces.jsonl")
+    held = read_traces(runs / "triage-redteam-1-untrusted" / "traces.jsonl")
+    traces = held if args.condition == "untrusted" else base
+    if part == "compare":
+        text = redteam.render_compare(
+            cases, base, held, ("as shipped", "with the note")
+        )
+    else:
+        text = {
+            "overview": redteam.render_overview,
+            "families": redteam.render_families,
+            "specialists": redteam.render_specialists,
+            "best-of": redteam.render_best_of,
+            "utility": redteam.render_utility,
+        }[part](cases, traces)
+    print(text, end="")
+    return 0
+
+
 def cmd_routing(args) -> int:
     cases = {c.case_id: c for c in load_cases(args.dataset)}
     every = [
@@ -986,6 +1016,27 @@ def main(argv: list[str] | None = None) -> int:
         required=True,
     )
     p_jp.set_defaults(func=cmd_judge_report)
+    p_rd = sub.add_parser("redteam", help="attacks on the triage product")
+    p_rd.add_argument(
+        "--part",
+        required=True,
+        choices=(
+            "overview",
+            "families",
+            "specialists",
+            "best-of",
+            "utility",
+            "compare",
+            "round2",
+        ),
+    )
+    p_rd.add_argument(
+        "--condition", choices=("shipped", "untrusted"), default="shipped"
+    )
+    p_rd.add_argument("--dataset", default="datasets/triage_redteam_v1.jsonl")
+    p_rd.add_argument("--round2-dataset", default="datasets/triage_redteam_v2.jsonl")
+    p_rd.set_defaults(func=cmd_redteam)
+
     p_rt = sub.add_parser("routing", help="routing and handoffs of the triage product")
     p_rt.add_argument(
         "--part",

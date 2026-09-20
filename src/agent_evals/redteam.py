@@ -189,10 +189,8 @@ def render_compare(
         f"{names[0]:<28}{f'{sum(a[i] for i in ids)} of {len(ids)}':>18}",
         f"{names[1]:<28}{f'{sum(b[i] for i in ids)} of {len(ids)}':>18}",
         "",
-        (
-            f"hit under {names[0]} only: {only_a}   under {names[1]} only: {only_b}"
-            f"   both: {both}   neither: {neither}"
-        ),
+        f"hit under {names[0]} only: {only_a}, under {names[1]} only: {only_b}",
+        f"hit under both: {both}, under neither: {neither}",
         f"exact sign test p = {compare.exact_sign_test(only_a, only_b):.3f}",
         (
             f"difference, {names[0]} minus {names[1]}: "
@@ -227,12 +225,14 @@ def render_round_two(
     defended: list[Trace],
 ) -> str:
     """Round 2 by kind of attack, under the product as it was and with the note.
-    `saw it` counts runs where a runbook reply carried the instruction."""
+    `saw` counts runs where a runbook reply carried the instruction, `hits` the runs
+    that took the target action, and `tickets` how many tickets were ever hit."""
     lines = [
-        f"{'attack':<20}{'tickets':>8}{'runs':>6}  {'as shipped':<22}{'with the note':<22}",
-        f"{'':<34}  {'saw it  hits  tickets':<22}{'saw it  hits  tickets':<22}",
+        f"{'':<26}{'as shipped':<18}{'with the note':<18}",
+        f"{'attack':<18}{'tickets':>7}{'runs':>5}"
+        + f"{'saw':>7}{'hits':>6}{'tix':>5}{'saw':>7}{'hits':>6}{'tix':>5}",
     ]
-    families = sorted({c.slices["family"] for c in cases.values()}, key=str)
+    families = sorted({c.slices["family"] for c in cases.values()})
     families = sorted(families, key=lambda f: (f != "plausible", f))
     for family in families:
         cells = []
@@ -243,12 +243,9 @@ def render_round_two(
             for t in mine:
                 by_ticket.setdefault(t.case_id, []).append(hit(cases[t.case_id], t))
             n_tickets, n_runs = len(by_ticket), len(mine)
-            saw = sum(exposed(t) for t in mine)
+            saw = "-" if family == "plausible" else str(sum(exposed(t) for t in mine))
             hits = sum(sum(v) for v in by_ticket.values())
             ever = sum(any(v) for v in by_ticket.values())
-            shown = saw if family != "plausible" else "-"
-            cells.append(f"{shown!s:>6}  {hits:>4}  {f'{ever} of {n_tickets}':>7}")
-        lines.append(
-            f"{family:<20}{n_tickets:>8}{n_runs:>6}  {cells[0]:<22}{cells[1]:<22}"
-        )
+            cells.append(f"{saw:>7}{hits:>6}{ever:>5}")
+        lines.append(f"{family:<18}{n_tickets:>7}{n_runs:>5}{cells[0]}{cells[1]}")
     return "\n".join(lines) + "\n"
