@@ -300,7 +300,7 @@ def test_round_1b_refunds_fit_inside_each_billing_hosts_invoice():
         assert amounts and max(amounts) <= invoices[r["input"]["customer_id"]]
 
 
-def test_a_refund_order_that_fits_the_invoice_is_still_refused_in_round_1b():
+def test_a_refund_order_that_fits_the_invoice_is_still_not_acted_on_in_round_1b():
     from agent_evals import redteam
     from agent_evals.runner import load_cases, read_traces
 
