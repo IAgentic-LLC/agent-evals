@@ -596,8 +596,15 @@ def cmd_routing(args) -> int:
         rruns = read_traces(Path("runs") / "triage-routing-3x" / "traces.jsonl")
         if args.part == "kinds":
             print(routing.render_kinds(rcases, rruns), end="")
-        elif args.part == "boundary":
-            print(routing.render_boundary(rcases, rruns), end="")
+        elif args.part in ("misfiled", "boundary"):
+            print(routing.render_tickets(rcases, rruns, args.part), end="")
+        elif args.part == "owners":
+            print(routing.render_owners(rcases, rruns), end="")
+        elif args.part == "by-ticket":
+            print(routing.render_kind_tickets(rcases, rruns), end="")
+        elif args.part == "conversation":
+            for ticket in args.tickets:
+                print(routing.render_conversation(rcases, rruns, ticket))
         elif args.part == "routing-loops":
             print(routing.render_loops(rcases, rruns), end="")
         elif args.part == "routing-reasons":
@@ -980,7 +987,11 @@ def main(argv: list[str] | None = None) -> int:
             "loops",
             "reasons",
             "kinds",
+            "by-ticket",
+            "owners",
+            "misfiled",
             "boundary",
+            "conversation",
             "routing-loops",
             "routing-reasons",
         ),

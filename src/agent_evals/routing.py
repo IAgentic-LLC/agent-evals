@@ -43,8 +43,8 @@ def targets(trace: Trace) -> list[str]:
 def render_specialists(cases: dict[str, EvalCase], traces: list[Trace]) -> str:
     """One row per specialist a ticket should end with: what happened to its runs."""
     lines = [
-        f"{'should end with':<17}{'tickets':>8}{'runs':>6}{'right':>7}"
-        + f"{'wrong':>7}{'error':>7}{'always right':>14}{'95% interval':>14}"
+        f"{'should end with':<16}{'tickets':>8}{'runs':>6}{'right':>7}"
+        + f"{'wrong':>7}{'error':>7}{'always right':>14}{'95% interval':>13}"
     ]
     for name in SPECIALISTS:
         mine = [t for t in traces if cases[t.case_id].expected["handled_by"] == name]
@@ -60,9 +60,9 @@ def render_specialists(cases: dict[str, EvalCase], traces: list[Trace]) -> str:
         )
         span = _span(wilson_interval(always, len(tickets)))
         lines.append(
-            f"{name:<17}{len(tickets):>8}{len(mine):>6}{counts['right']:>7}"
+            f"{name:<16}{len(tickets):>8}{len(mine):>6}{counts['right']:>7}"
             f"{counts['wrong']:>7}{counts['error']:>7}"
-            f"{f'{always} of {len(tickets)}':>14}{span:>14}"
+            f"{f'{always} of {len(tickets)}':>14}{span:>13}"
         )
     return "\n".join(lines) + "\n"
 
@@ -170,20 +170,91 @@ def render_kinds(cases: dict[str, EvalCase], traces: list[Trace]) -> str:
     return "\n".join(lines) + "\n"
 
 
-def render_boundary(cases: dict[str, EvalCase], traces: list[Trace]) -> str:
-    """Each boundary ticket: what I expected, what I would accept, where its runs ended."""
+def render_tickets(cases: dict[str, EvalCase], traces: list[Trace], kind: str) -> str:
+    """Each ticket of one kind: what I expected, and where each of its runs ended."""
     lines = [f"{'ticket':<8}{'category':<11}{'expected':<11}{'ended, run by run'}"]
     for case_id in sorted(cases):
         case = cases[case_id]
-        if case.slices["kind"] != "boundary":
+        if case.slices["kind"] != kind:
             continue
-        ends = [
-            (t.handled_by if t.handled_by and not t.error else "error")
-            for t in sorted(traces, key=lambda t: t.trial)
-            if t.case_id == case_id
-        ]
+        ends = []
+        for t in sorted(
+            (t for t in traces if t.case_id == case_id), key=lambda t: t.trial
+        ):
+            if not t.error:
+                ends.append(t.handled_by or "none")
+            elif t.error.startswith("HandoffLoop"):
+                ends.append("loop")
+            else:
+                ends.append("stall")
         lines.append(
             f"{case_id:<8}{case.input['category']:<11}{case.expected['handled_by']:<11}"
             + ", ".join(ends)
         )
+    return "\n".join(lines) + "\n"
+
+
+def render_kind_tickets(cases: dict[str, EvalCase], traces: list[Trace]) -> str:
+    """By kind, counting tickets, not runs: how many always finished right, ever
+    looped between two specialists, or ever asked for a handoff."""
+    lines = [
+        f"{'kind':<12}{'tickets':>8}{'always right':>16}{'ever looped':>15}"
+        + f"{'ever handed off':>18}"
+    ]
+    for kind in ("misfiled", "boundary", "distractor"):
+        ids = sorted(c for c in cases if cases[c].slices["kind"] == kind)
+        mine = {c: [t for t in traces if t.case_id == c] for c in ids}
+        counts = [
+            sum(all(where(cases[c], t) == "right" for t in v) for c, v in mine.items()),
+            sum(
+                any(t.error and t.error.startswith("HandoffLoop") for t in v)
+                for v in mine.values()
+            ),
+            sum(any(handoffs(t) for t in v) for v in mine.values()),
+        ]
+        cells = "".join(
+            f"{f'{k} of {len(ids)} ' + _span(wilson_interval(k, len(ids))):>{w}}"
+            for k, w in zip(counts, (16, 15, 18))
+        )
+        lines.append(f"{kind:<12}{len(ids):>8}{cells}")
+    return "\n".join(lines) + "\n"
+
+
+def render_conversation(
+    cases: dict[str, EvalCase], traces: list[Trace], case_id: str
+) -> str:
+    """Every handoff request in the first run of a ticket that made any, in order,
+    with who asked and the reason given."""
+    case = cases[case_id]
+    for t in sorted((t for t in traces if t.case_id == case_id), key=lambda t: t.trial):
+        if handoffs(t):
+            asker = case.input["category"]
+            lines = [
+                f"{case_id}, filed under {asker}, belongs to {case.expected['handled_by']}"
+            ]
+            for n, h in enumerate(handoffs(t), 1):
+                args = h.get("arguments", {})
+                lines.append(f"{n}. {asker} asks for {args.get('target_category')}:")
+                lines += [
+                    "   " + x
+                    for x in textwrap.wrap(str(args.get("reason", "")), width=72)[:4]
+                ]
+                asker = args.get("target_category", "?")
+            return "\n".join(lines) + "\n"
+    return f"{case_id}: no run asked for a handoff\n"
+
+
+def render_owners(cases: dict[str, EvalCase], traces: list[Trace]) -> str:
+    """Errors by the specialist a ticket belongs to: tool loops and handoff loops."""
+    lines = [
+        f"{'belongs to':<12}{'runs':>6}{'finished':>10}{'tool loop':>11}{'handoff loop':>14}"
+    ]
+    for name in SPECIALISTS:
+        mine = [t for t in traces if cases[t.case_id].expected["handled_by"] == name]
+        stall = sum(
+            bool(t.error and not t.error.startswith("HandoffLoop")) for t in mine
+        )
+        loop = sum(bool(t.error and t.error.startswith("HandoffLoop")) for t in mine)
+        done = sum(t.error is None for t in mine)
+        lines.append(f"{name:<12}{len(mine):>6}{done:>10}{stall:>11}{loop:>14}")
     return "\n".join(lines) + "\n"
