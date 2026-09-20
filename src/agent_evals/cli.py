@@ -22,6 +22,7 @@ from agent_evals import (
     judge,
     judge_report,
     labels,
+    reliability,
     tool_calls,
     trajectory,
     world,
@@ -573,6 +574,28 @@ def cmd_judge_report(args) -> int:
     return 0
 
 
+def cmd_reliability(args) -> int:
+    part = args.part
+    if part == "consistent":
+        print(reliability.render_consistent(), end="")
+        return 0
+    cases = {c.case_id: c for c in load_cases(args.dataset)}
+    names = [n for n in reliability.TRIAL_RUNS if (Path("runs") / n).is_dir()]
+    runs = [read_traces(Path("runs") / n / "traces.jsonl") for n in names]
+    outs = reliability.outcomes(cases, runs)
+    if part == "trials":
+        print(reliability.render_trials(cases, names, runs), end="")
+    elif part == "curve":
+        print(reliability.render_curve(outs), end="")
+    elif part == "split":
+        print(reliability.render_split(outs), end="")
+    elif part == "variance":
+        print(reliability.render_variance(outs), end="")
+    elif part == "errors":
+        print(reliability.render_errors(reliability.errors_by_case(runs)), end="")
+    return 0
+
+
 def cmd_compare(args) -> int:
     part = args.part
     if part == "coverage":
@@ -907,6 +930,15 @@ def main(argv: list[str] | None = None) -> int:
         required=True,
     )
     p_jp.set_defaults(func=cmd_judge_report)
+    p_rl = sub.add_parser("reliability", help="repeated trials of the same cases")
+    p_rl.add_argument(
+        "--part",
+        required=True,
+        choices=("trials", "curve", "split", "variance", "errors", "consistent"),
+    )
+    p_rl.add_argument("--dataset", default="datasets/triage_heldout_v1.jsonl")
+    p_rl.set_defaults(func=cmd_reliability)
+
     p_cp = sub.add_parser("compare", help="is one run really different from another")
     p_cp.add_argument(
         "--part",
