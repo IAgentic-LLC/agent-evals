@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 from agent_evals import (
     abstention,
     answer_graders,
+    compare,
     conversation,
     forced,
     grader_check,
@@ -572,6 +573,27 @@ def cmd_judge_report(args) -> int:
     return 0
 
 
+def cmd_compare(args) -> int:
+    part = args.part
+    if part == "coverage":
+        print(compare.render_coverage(), end="")
+    elif part == "paired-coverage":
+        print(compare.render_paired_coverage(), end="")
+    elif part == "attack":
+        print(compare.attack_report(), end="")
+    else:
+        cases, runs = _abstention_inputs(args)
+        report = {
+            "intervals": compare.render_intervals,
+            "difference": compare.render_difference,
+            "noise": compare.render_noise,
+            "slices": compare.render_slices,
+            "plan": compare.render_plan,
+        }[part]
+        print(report(cases, runs), end="")
+    return 0
+
+
 def cmd_labels(args) -> int:
     items = labels.item_list()
     truth = labels.author_labels(items, args.convention, args.adjudicated)
@@ -885,6 +907,24 @@ def main(argv: list[str] | None = None) -> int:
         required=True,
     )
     p_jp.set_defaults(func=cmd_judge_report)
+    p_cp = sub.add_parser("compare", help="is one run really different from another")
+    p_cp.add_argument(
+        "--part",
+        required=True,
+        choices=(
+            "intervals",
+            "difference",
+            "noise",
+            "slices",
+            "plan",
+            "coverage",
+            "paired-coverage",
+            "attack",
+        ),
+    )
+    p_cp.add_argument("--dataset", default="datasets/pkg_abstain_v1.jsonl")
+    p_cp.set_defaults(func=cmd_compare)
+
     p_lb = sub.add_parser("labels", help="agreement between people and judges")
     p_lb.add_argument(
         "--part",
