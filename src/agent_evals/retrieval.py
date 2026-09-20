@@ -267,6 +267,10 @@ async def leaked_results(
     return leaked, total
 
 
+def mean(values: list[float]) -> float:
+    return sum(values) / len(values)
+
+
 def bootstrap_interval(
     values: list[float], resamples: int = 10_000, seed: int = 0
 ) -> tuple[float, float]:

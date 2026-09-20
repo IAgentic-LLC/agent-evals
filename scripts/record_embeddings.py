@@ -9,7 +9,7 @@ Everything after this step reads the recording, so the scores can be reproduced 
 key and no network.
 
 Usage:
-    uv run python scripts/record_embeddings.py OUT_DIR --env-file path/to/.env
+    uv run python scripts/record_embeddings.py OUT_DIR \n        --queries datasets/pkg_queries_v2.jsonl --env-file path/to/.env
 """
 
 import argparse
@@ -33,14 +33,14 @@ from agent_evals.runner import load_cases
 
 ROOT = Path(__file__).resolve().parents[1]
 CORPUS = ROOT / "datasets" / "pkg_corpus_v1.jsonl"
-QUERIES = ROOT / "datasets" / "pkg_queries_v1.jsonl"
 
 
 def sha(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-async def main(out: Path) -> None:
+async def main(out: Path, queries_path: Path) -> None:
+    QUERIES = queries_path
     corpus = load_corpus(CORPUS)
     queries = [c.input["query"] for c in load_cases(QUERIES)]
     harness, started = harness_state(), now()
@@ -86,8 +86,9 @@ async def main(out: Path) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("out", type=Path)
+    parser.add_argument("--queries", type=Path, required=True)
     parser.add_argument("--env-file")
     args = parser.parse_args()
     if args.env_file:
         load_dotenv(args.env_file)
-    asyncio.run(main(args.out))
+    asyncio.run(main(args.out, args.queries))
