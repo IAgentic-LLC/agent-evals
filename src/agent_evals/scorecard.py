@@ -98,6 +98,12 @@ def render_markdown(sc: Scorecard) -> str:
     ]
     if sc.violated_cases:
         lines += ["", f"Invariant violated in: {', '.join(sc.violated_cases)}"]
+    if sc.trials > 1:
+        lines += [
+            "",
+            f"Each case ran {sc.trials} times. Trials of one case are not independent,",
+            "so read these intervals as describing these trials, not new tickets.",
+        ]
     lines += [
         "",
         "There is no combined score on purpose. Each measure carries its own",

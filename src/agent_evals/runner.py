@@ -1,6 +1,8 @@
 """Load datasets, run an adapter over cases, and read and write traces."""
 
+import asyncio
 import json
+from contextlib import nullcontext
 from pathlib import Path
 from typing import Protocol
 
@@ -31,13 +33,23 @@ def read_traces(path: str | Path) -> list[Trace]:
 
 
 async def run_cases(
-    cases: list[EvalCase], adapter: Adapter, trials: int = 1
+    cases: list[EvalCase], adapter: Adapter, trials: int = 1, concurrency: int = 1
 ) -> list[Trace]:
-    traces: list[Trace] = []
-    for case in cases:
-        for trial in range(1, trials + 1):
-            traces.append(await adapter.run(case, trial))
-    return traces
+    """Run every (case, trial), at most `concurrency` at a time.
+
+    Traces come back in case-then-trial order whatever order the runs finish in.
+    An adapter that changes the product under test does it in `__enter__` and
+    undoes it in `__exit__`, so the change happens once for the whole run.
+    """
+    gate = asyncio.Semaphore(concurrency)
+
+    async def one(case: EvalCase, trial: int) -> Trace:
+        async with gate:
+            return await adapter.run(case, trial)
+
+    jobs = [one(case, trial) for case in cases for trial in range(1, trials + 1)]
+    with adapter if hasattr(adapter, "__enter__") else nullcontext():
+        return list(await asyncio.gather(*jobs))
 
 
 def dump_json(path: str | Path, payload: dict) -> None:

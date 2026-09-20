@@ -13,13 +13,14 @@ Four ways to produce a trace for the same case:
                      to show which gates can catch it
 """
 
+import asyncio
 import time
 from pathlib import Path
 
 from reliable_agents_labs.models import ModelResult, ToolCall
 from triage_app.supervisor import route_ticket
 from triage_app.tickets import Ticket
-from triage_app.tools import ACTIONS_TAKEN, BILLING_TOOLS
+from triage_app.tools import ACTIONS_TAKEN, BILLING_TOOLS, _actions_var
 
 from agent_evals.runner import read_traces
 from agent_evals.schema import EvalCase, Trace
@@ -41,10 +42,13 @@ def _result(text: str, calls: list[ToolCall] | None = None) -> ModelResult:
 
 
 class _ScriptedClient:
-    def __init__(self, results: list[ModelResult]) -> None:
+    def __init__(self, results: list[ModelResult], delay_s: float = 0.0) -> None:
         self._results = iter(results)
+        self._delay_s = delay_s
 
     async def generate(self, *, system, user, tools=None, history=None) -> ModelResult:
+        # A real model call takes time, and other runs proceed meanwhile.
+        await asyncio.sleep(self._delay_s)
         return next(self._results)
 
 
@@ -70,7 +74,9 @@ def _script_for(case: EvalCase) -> list[ModelResult]:
 
 
 async def _run_once(case: EvalCase, trial: int, adapter: str, client) -> Trace:
-    ACTIONS_TAKEN.clear()
+    # Give this run its own action list. Clearing the shared one is not enough:
+    # if the caller touched it first, concurrent runs would all share that list.
+    _actions_var.set([])
     started = time.perf_counter()
     handled_by, error, answer = None, None, ""
     try:
@@ -110,48 +116,66 @@ class CustomerIdAdapter:
     def __init__(self, client=None) -> None:
         self._client = client
 
-    async def run(self, case: EvalCase, trial: int) -> Trace:
+    def __enter__(self):
+        # Patched once for the whole run, not once per case: overlapping runs
+        # that each patch and restore leave the product's module altered.
         from triage_app import specialists
 
-        original = specialists._question_for
+        self._original = specialists._question_for
+        original = self._original
 
         def with_customer_id(ticket, context_note):
             header = f"Customer ID: {ticket.customer_id}\n\n"
             return header + original(ticket, context_note)
 
         specialists._question_for = with_customer_id
-        try:
-            return await _run_once(case, trial, self.name, self._client)
-        finally:
-            specialists._question_for = original
+        return self
+
+    def __exit__(self, *exc_info) -> None:
+        from triage_app import specialists
+
+        specialists._question_for = self._original
+
+    async def run(self, case: EvalCase, trial: int) -> Trace:
+        return await _run_once(case, trial, self.name, self._client)
 
 
 class ScriptedWallAdapter:
     name = "triage-scripted-wall"
 
+    def __init__(self, delay_s: float = 0.0) -> None:
+        self._delay_s = delay_s
+
     async def run(self, case: EvalCase, trial: int) -> Trace:
-        return await _run_once(
-            case, trial, self.name, _ScriptedClient(_script_for(case))
-        )
+        client = _ScriptedClient(_script_for(case), self._delay_s)
+        return await _run_once(case, trial, self.name, client)
 
 
 class RegressedAdapter:
     name = "triage-regressed-scripted"
 
-    async def run(self, case: EvalCase, trial: int) -> Trace:
+    def __init__(self, delay_s: float = 0.0) -> None:
+        self._delay_s = delay_s
+
+    def __enter__(self):
+        # The regression is applied once for the whole run and undone after it.
         from triage_app import specialists
 
         refund_tool = next(
             t for t in BILLING_TOOLS if t["function"]["name"] == "issue_refund"
         )
-        original = specialists.TECHNICAL_TOOLS
-        specialists.TECHNICAL_TOOLS = original + [refund_tool]
-        try:
-            return await _run_once(
-                case, trial, self.name, _ScriptedClient(_script_for(case))
-            )
-        finally:
-            specialists.TECHNICAL_TOOLS = original
+        self._original = specialists.TECHNICAL_TOOLS
+        specialists.TECHNICAL_TOOLS = self._original + [refund_tool]
+        return self
+
+    def __exit__(self, *exc_info) -> None:
+        from triage_app import specialists
+
+        specialists.TECHNICAL_TOOLS = self._original
+
+    async def run(self, case: EvalCase, trial: int) -> Trace:
+        client = _ScriptedClient(_script_for(case), self._delay_s)
+        return await _run_once(case, trial, self.name, client)
 
 
 class ReplayAdapter:

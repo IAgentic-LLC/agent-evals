@@ -4,11 +4,13 @@ import argparse
 import asyncio
 import os
 import sys
+import time
 from pathlib import Path
 
 from dotenv import load_dotenv
 
 from agent_evals import gate as gate_mod
+from agent_evals.manifest import build_manifest, now
 from agent_evals.runner import (
     dump_json,
     load_cases,
@@ -60,9 +62,23 @@ def cmd_run(args) -> int:
         )
     cases = load_cases(args.dataset)
     adapter = _make_adapter(args.adapter, args.replay)
-    traces = asyncio.run(run_cases(cases, adapter, trials=args.trials))
+    started_at, clock = now(), time.perf_counter()
+    traces = asyncio.run(
+        run_cases(cases, adapter, trials=args.trials, concurrency=args.concurrency)
+    )
+    wall_seconds = time.perf_counter() - clock
     out = Path(args.out)
     write_traces(out / "traces.jsonl", traces)
+    manifest = build_manifest(
+        adapter=args.adapter,
+        dataset=args.dataset,
+        cases=len(cases),
+        trials=args.trials,
+        concurrency=args.concurrency,
+        started_at=started_at,
+        wall_seconds=wall_seconds,
+    )
+    dump_json(out / "manifest.json", manifest)
     sc = build_scorecard(Path(args.dataset).stem, out.name, cases, traces)
     dump_json(out / "scorecard.json", sc.model_dump())
     (out / "scorecard.md").write_text(render_markdown(sc), encoding="utf8")
@@ -94,6 +110,12 @@ def main(argv: list[str] | None = None) -> int:
     p_run.add_argument("--dataset", required=True)
     p_run.add_argument("--out", required=True)
     p_run.add_argument("--trials", type=int, default=1)
+    p_run.add_argument(
+        "--concurrency",
+        type=int,
+        default=1,
+        help="how many runs may be in flight at once (default 1)",
+    )
     p_run.add_argument("--replay", help="traces.jsonl to replay (triage-replay only)")
     p_run.add_argument(
         "--env-file", help="a .env file to load at runtime (never committed)"

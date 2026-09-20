@@ -7,7 +7,7 @@ from pathlib import Path
 
 from agent_evals.adapters.triage import CustomerIdAdapter
 from agent_evals.graders import required_actions_missing
-from agent_evals.runner import load_cases, read_traces
+from agent_evals.runner import load_cases, read_traces, run_cases
 from agent_evals.schema import EvalCase, Trace
 from agent_evals.scorecard import build_scorecard
 
@@ -102,6 +102,6 @@ async def test_the_customer_id_adapter_puts_the_id_in_the_question_and_restores_
     before = specialists._question_for
     client = _CapturingClient()
     case = next(c for c in load_cases(DATASET) if c.case_id == "TCK-1001")
-    await CustomerIdAdapter(client=client).run(case, 1)
+    await run_cases([case], CustomerIdAdapter(client=client))
     assert client.questions[0].startswith("Customer ID: cust-42")
     assert specialists._question_for is before
