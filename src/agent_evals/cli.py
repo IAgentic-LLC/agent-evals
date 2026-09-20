@@ -61,9 +61,26 @@ ADAPTERS = (
 )
 
 
-def _make_adapter(name: str, replay: str | None):
+def _answer_client(model_id: str):
+    """The client the product would build, but for a named model instead of the one in
+    config/models.yaml (chapter 22)."""
+    from reliable_agents_labs.models import GeminiOpenAICompatibleClient
+    from reliable_agents_labs.reliability import RetryingModelClient
+
+    return RetryingModelClient(GeminiOpenAICompatibleClient(model_id=model_id))
+
+
+def _make_adapter(name: str, replay: str | None, answer_model: str | None = None):
     from agent_evals.adapters import triage
 
+    if answer_model is not None:
+        allowed = {
+            "triage-live-customer-id": triage.CustomerIdAdapter,
+            "triage-live-customer-id-stall-guard": triage.StallGuardAdapter,
+        }
+        if name not in allowed:
+            raise SystemExit(f"--answer-model works with {sorted(allowed)}, not {name}")
+        return allowed[name](client=_answer_client(answer_model))
     if name == "triage-live":
         return triage.LiveAdapter()
     if name == "triage-live-customer-id":
@@ -122,7 +139,7 @@ def cmd_run(args) -> int:
             f"{args.adapter} needs GEMINI_API_KEY (use --env-file or export it)"
         )
     cases = load_cases(args.dataset)
-    adapter = _make_adapter(args.adapter, args.replay)
+    adapter = _make_adapter(args.adapter, args.replay, args.answer_model)
     harness, started_at, clock = harness_state(), now(), time.perf_counter()
     traces = asyncio.run(
         run_cases(cases, adapter, trials=args.trials, concurrency=args.concurrency)
@@ -139,6 +156,11 @@ def cmd_run(args) -> int:
         concurrency=args.concurrency,
         started_at=started_at,
         wall_seconds=wall_seconds,
+        model=(
+            {"provider": "gemini", "model_id": args.answer_model}
+            if args.answer_model
+            else None
+        ),
     )
     dump_json(out / "manifest.json", manifest)
     if args.adapter.startswith("pkg"):
@@ -861,6 +883,10 @@ def main(argv: list[str] | None = None) -> int:
         help="how many runs may be in flight at once (default 1)",
     )
     p_run.add_argument("--replay", help="traces.jsonl to replay (triage-replay only)")
+    p_run.add_argument(
+        "--answer-model",
+        help="a model id to use instead of the one in config/models.yaml",
+    )
     p_run.add_argument(
         "--env-file", help="a .env file to load at runtime (never committed)"
     )

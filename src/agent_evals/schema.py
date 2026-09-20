@@ -48,6 +48,9 @@ class Trace(BaseModel):
     # for runs recorded before chapter 13.
     retrieved: list[dict[str, Any]] = Field(default_factory=list)
     cited: list[str] = Field(default_factory=list)
+    # Model calls, input tokens and output tokens for the run, as the provider reported
+    # them. Empty for runs recorded before chapter 22.
+    usage: dict[str, int] = Field(default_factory=dict)
 
 
 class Grade(BaseModel):

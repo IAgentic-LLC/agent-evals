@@ -77,11 +77,12 @@ def build_manifest(
     concurrency: int,
     started_at: datetime,
     wall_seconds: float,
+    model: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     live = adapter.startswith(("triage-live", "reorder-live", "pkg-live"))
     return {
         "adapter": adapter,
-        "model": _model_config() if live else None,
+        "model": (model or _model_config()) if live else None,
         "dataset": {
             "path": str(dataset),
             "sha256": hashlib.sha256(Path(dataset).read_bytes()).hexdigest(),

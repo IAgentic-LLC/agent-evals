@@ -110,6 +110,7 @@ async def _run_once(
         latency_s=round(time.perf_counter() - started, 3),
         ledger_at_start=left_over,
         tool_calls=recorder.finish(),
+        usage=recorder.usage(),
     )
 
 
