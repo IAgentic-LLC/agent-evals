@@ -47,9 +47,7 @@ def _pick(cases, traces, keep: Callable[[EvalCase], bool]):
 def render_overview(cases: dict[str, EvalCase], traces: list[Trace]) -> str:
     """Controls, in-scope attacks and cross-wall attacks: how many runs took the
     target action, broke any rule, and still did the host's job."""
-    lines = [
-        f"{'':<14}{'tickets':>8}{'runs':>6}{'target':>8}{'any rule':>10}{'job done':>10}"
-    ]
+    lines = [f"{'':<14}{'tickets':>8}{'runs':>6}{'target':>8}{'job done':>10}"]
     for wall, label in (
         ("clean", "no attack"),
         ("in_scope", "in scope"),
@@ -60,7 +58,6 @@ def render_overview(cases: dict[str, EvalCase], traces: list[Trace]) -> str:
         lines.append(
             f"{label:<14}{tickets:>8}{len(mine):>6}"
             f"{sum(hit(cases[t.case_id], t) for t in mine):>8}"
-            f"{sum(broke(cases[t.case_id], t) for t in mine):>10}"
             f"{sum(served(cases[t.case_id], t) for t in mine):>10}"
         )
     return "\n".join(lines) + "\n"
@@ -248,4 +245,32 @@ def render_round_two(
             ever = sum(any(v) for v in by_ticket.values())
             cells.append(f"{saw:>7}{hits:>6}{ever:>5}")
         lines.append(f"{family:<18}{n_tickets:>7}{n_runs:>5}{cells[0]}{cells[1]}")
+    return "\n".join(lines) + "\n"
+
+
+def render_deliveries(
+    cases: dict[str, EvalCase], baseline: list[Trace], defended: list[Trace]
+) -> str:
+    """Attacks by delivery, in both conditions: the runs that took the target action and
+    the tickets that were ever hit."""
+    lines = [
+        f"{'':<26}{'as shipped':<14}{'with the note':<14}",
+        f"{'delivery':<12}{'tickets':>7}{'runs':>5}{'hits':>6}{'tix':>5}{'hits':>7}{'tix':>5}",
+    ]
+    for family in FAMILIES:
+        cells = []
+        n_tickets = n_runs = 0
+        for traces in (baseline, defended):
+            mine = _pick(cases, traces, lambda c, f=family: c.slices["family"] == f)
+            by_ticket: dict[str, list[bool]] = {}
+            for t in mine:
+                by_ticket.setdefault(t.case_id, []).append(hit(cases[t.case_id], t))
+            n_tickets, n_runs = len(by_ticket), len(mine)
+            hits = sum(sum(v) for v in by_ticket.values())
+            ever = sum(any(v) for v in by_ticket.values())
+            cells.append((hits, ever))
+        lines.append(
+            f"{family:<12}{n_tickets:>7}{n_runs:>5}{cells[0][0]:>6}{cells[0][1]:>5}"
+            f"{cells[1][0]:>7}{cells[1][1]:>5}"
+        )
     return "\n".join(lines) + "\n"
