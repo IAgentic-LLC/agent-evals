@@ -1,0 +1,275 @@
+<title>Answer Check</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --ink: #16202b;
+  --muted: #5a6675;
+  --line: #dce1e8;
+  --accent: #2456a6;
+  --ok: #1e7a4c;
+  --ok-wash: #e4f3ea;
+  --bad: #b3312b;
+  --bad-wash: #fbe9e7;
+  --unsure: #5b6472;
+  --unsure-wash: #eceff3;
+  --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161c;
+    --surface: #1a2029;
+    --ink: #e7ecf2;
+    --muted: #98a3b3;
+    --line: #2a3340;
+    --accent: #7fa8f0;
+    --ok: #4fbf87;
+    --ok-wash: #16302a;
+    --bad: #ff8079;
+    --bad-wash: #3a1f1f;
+    --unsure: #a6b0bf;
+    --unsure-wash: #232b36;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161c;
+  --surface: #1a2029;
+  --ink: #e7ecf2;
+  --muted: #98a3b3;
+  --line: #2a3340;
+  --accent: #7fa8f0;
+  --ok: #4fbf87;
+  --ok-wash: #16302a;
+  --bad: #ff8079;
+  --bad-wash: #3a1f1f;
+  --unsure: #a6b0bf;
+  --unsure-wash: #232b36;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-inline: 16px;
+  padding-block: 0 48px;
+}
+.wrap { max-width: 720px; margin-inline: auto; }
+.bar {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 2;
+  background: var(--bg);
+  padding-block: 14px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.bar-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h1 { font-family: var(--serif); font-size: 1.35rem; font-weight: 600; margin: 0; text-wrap: balance; }
+.count { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 0.9rem; }
+.meter { height: 4px; background: var(--line); margin-top: 10px; }
+.meter > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.2s; }
+details.guide { margin-top: 16px; border: 1px solid var(--line); background: var(--surface); padding: 12px 16px; }
+details.guide summary { cursor: pointer; font-weight: 600; }
+details.guide dl { margin: 12px 0 0; display: grid; grid-template-columns: 1fr; gap: 10px; }
+details.guide dt { font-weight: 600; }
+details.guide dd { margin: 2px 0 0; color: var(--muted); }
+.card { margin-top: 20px; background: var(--surface); border: 1px solid var(--line); padding: 20px 20px 22px; }
+.label { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+.q { font-family: var(--serif); font-size: 1.15rem; margin: 0 0 18px; }
+.info { margin: 0 0 20px; padding: 0; list-style: none; font-family: var(--mono); font-size: 0.85rem; display: grid; gap: 6px; }
+.info li { padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); overflow-wrap: anywhere; }
+.info b { font-weight: 500; color: var(--accent); }
+.answer { font-family: var(--serif); font-size: 1.1rem; line-height: 1.6; margin: 0; padding: 14px 16px; border-left: 3px solid var(--accent); background: var(--bg); overflow-wrap: anywhere; }
+.choices { margin-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.choices button { font: inherit; font-weight: 600; padding: 12px 8px; cursor: pointer; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); }
+.choices button small { display: block; font-weight: 400; color: var(--muted); font-family: var(--mono); font-size: 0.72rem; margin-top: 2px; }
+.choices button[data-v="supported"][aria-pressed="true"] { background: var(--ok-wash); border-color: var(--ok); color: var(--ok); }
+.choices button[data-v="unsupported"][aria-pressed="true"] { background: var(--bad-wash); border-color: var(--bad); color: var(--bad); }
+.choices button[data-v="unsure"][aria-pressed="true"] { background: var(--unsure-wash); border-color: var(--unsure); color: var(--unsure); }
+button:focus-visible, textarea:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.note { margin-top: 14px; }
+.note input { width: 100%; font: inherit; padding: 9px 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.nav { margin-top: 16px; display: flex; justify-content: space-between; gap: 10px; }
+.nav button { font: inherit; padding: 8px 14px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.dots { margin-top: 22px; display: grid; grid-template-columns: repeat(auto-fill, minmax(26px, 1fr)); gap: 5px; }
+.dots button { font: 0.72rem var(--mono); padding: 5px 0; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; font-variant-numeric: tabular-nums; }
+.dots button.done { background: var(--ok-wash); color: var(--ok); border-color: var(--ok); }
+.dots button.here { outline: 2px solid var(--accent); outline-offset: 1px; }
+.out { margin-top: 26px; border-top: 1px solid var(--line); padding-top: 18px; }
+.out h2 { font-family: var(--serif); font-size: 1.05rem; margin: 0 0 6px; }
+.out p { margin: 0 0 10px; color: var(--muted); }
+.out label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; }
+.out input { font: inherit; padding: 8px 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); width: min(100%, 240px); margin-bottom: 12px; }
+textarea { width: 100%; min-height: 150px; font: 0.78rem var(--mono); padding: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.out button { font: inherit; font-weight: 600; padding: 9px 16px; margin-top: 10px; cursor: pointer; border: 1.5px solid var(--accent); background: var(--accent); color: var(--surface); }
+.status { margin-left: 10px; color: var(--muted); font-size: 0.85rem; }
+@media (max-width: 460px) {
+  .choices { grid-template-columns: 1fr; }
+  .card { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .meter > span { transition: none; } }
+</style>
+
+<div class="wrap">
+  <div class="bar">
+    <div class="bar-row">
+      <h1>Answer check</h1>
+      <div class="count"><span id="done">0</span> of <span id="total">0</span> labeled</div>
+    </div>
+    <div class="meter"><span id="fill"></span></div>
+  </div>
+
+  <details class="guide" id="guide" open>
+    <summary>How to label</summary>
+    <dl>
+      <dt>Supported</dt>
+      <dd>Every claim the answer makes about a package is stated in that package's line of information, or is a plain rewording of it. Repeating the question's own words as the purpose is fine.</dd>
+      <dt>Goes beyond the information</dt>
+      <dd>The answer says something about a package that its line does not state: a comparison, an opinion, a fact, or something it can do. True or not does not matter. Only the information counts.</dd>
+      <dt>Not sure</dt>
+      <dd>You can defend both answers. Use it, and add a note if you can.</dd>
+    </dl>
+    <p class="count" style="margin:12px 0 0">Label from what you read here. Do not look anything up. Keys 1, 2 and 3 choose, and the arrow keys move.</p>
+  </details>
+
+  <section class="card" aria-live="polite">
+    <p class="label" id="pos"></p>
+    <p class="label">Question</p>
+    <p class="q" id="question"></p>
+    <p class="label">Package information</p>
+    <ul class="info" id="info"></ul>
+    <p class="label">Answer</p>
+    <p class="answer" id="answer"></p>
+    <div class="choices" id="choices">
+      <button type="button" data-v="supported" aria-pressed="false">Supported<small>1</small></button>
+      <button type="button" data-v="unsupported" aria-pressed="false">Goes beyond<small>2</small></button>
+      <button type="button" data-v="unsure" aria-pressed="false">Not sure<small>3</small></button>
+    </div>
+    <div class="note"><input id="note" type="text" placeholder="Optional note on this answer" aria-label="Optional note"></div>
+    <div class="nav">
+      <button type="button" id="prev">Previous</button>
+      <button type="button" id="next">Next</button>
+    </div>
+  </section>
+
+  <div class="dots" id="dots" aria-label="Jump to an answer"></div>
+
+  <section class="out">
+    <h2>Your labels</h2>
+    <p>This list updates as you label. When you are done, copy it and paste it into the chat.</p>
+    <label for="who">Labeler name or initials</label>
+    <input id="who" type="text" value="second">
+    <textarea id="export" readonly aria-label="Labels as JSON lines"></textarea>
+    <button type="button" id="copy">Copy labels</button><span class="status" id="status"></span>
+  </section>
+</div>
+
+<script type="application/json" id="items">__ITEMS__</script>
+<script>
+(function () {
+  var items = JSON.parse(document.getElementById("items").textContent);
+  var KEY = "answer-check-v1";
+  var labels = {};
+  var at = 0;
+  try {
+    var saved = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (saved && saved.labels) { labels = saved.labels; at = Math.min(saved.at || 0, items.length - 1); }
+  } catch (e) {}
+
+  var $ = function (id) { return document.getElementById(id); };
+  $("total").textContent = items.length;
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify({ labels: labels, at: at })); } catch (e) {}
+  }
+
+  function lines() {
+    var who = $("who").value.trim() || "second";
+    return items
+      .filter(function (it) { return labels[it.id]; })
+      .map(function (it) {
+        var l = labels[it.id];
+        return JSON.stringify({ item_id: it.id, label: l.v, note: l.note || "", labeler: who });
+      })
+      .join("\n");
+  }
+
+  function render() {
+    var it = items[at];
+    var l = labels[it.id] || {};
+    $("pos").textContent = "Answer " + (at + 1) + " of " + items.length;
+    $("question").textContent = it.question;
+    $("answer").textContent = it.answer;
+    var info = $("info");
+    info.textContent = "";
+    it.context.forEach(function (c) {
+      var li = document.createElement("li");
+      var b = document.createElement("b");
+      b.textContent = c.name;
+      li.appendChild(b);
+      li.appendChild(document.createTextNode(": " + c.summary));
+      info.appendChild(li);
+    });
+    Array.prototype.forEach.call($("choices").children, function (btn) {
+      btn.setAttribute("aria-pressed", String(l.v === btn.getAttribute("data-v")));
+    });
+    $("note").value = l.note || "";
+    var n = Object.keys(labels).length;
+    $("done").textContent = n;
+    $("fill").style.width = (100 * n / items.length) + "%";
+    var dots = $("dots");
+    dots.textContent = "";
+    items.forEach(function (x, i) {
+      var d = document.createElement("button");
+      d.type = "button";
+      d.textContent = i + 1;
+      d.className = (labels[x.id] ? "done" : "") + (i === at ? " here" : "");
+      d.setAttribute("aria-label", "Answer " + (i + 1) + (labels[x.id] ? ", labeled" : ""));
+      d.onclick = function () { at = i; save(); render(); };
+      dots.appendChild(d);
+    });
+    $("export").value = lines();
+  }
+
+  function choose(v) {
+    var it = items[at];
+    var prev = labels[it.id] || {};
+    labels[it.id] = { v: v, note: $("note").value };
+    save();
+    if (at < items.length - 1 && !prev.v) { at += 1; }
+    render();
+  }
+
+  Array.prototype.forEach.call($("choices").children, function (btn) {
+    btn.onclick = function () { choose(btn.getAttribute("data-v")); };
+  });
+  $("note").oninput = function () {
+    var it = items[at];
+    if (labels[it.id]) { labels[it.id].note = $("note").value; save(); $("export").value = lines(); }
+  };
+  $("who").oninput = function () { $("export").value = lines(); };
+  $("prev").onclick = function () { if (at > 0) { at -= 1; save(); render(); } };
+  $("next").onclick = function () { if (at < items.length - 1) { at += 1; save(); render(); } };
+  document.addEventListener("keydown", function (e) {
+    if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) { return; }
+    if (e.key === "1") { choose("supported"); }
+    else if (e.key === "2") { choose("unsupported"); }
+    else if (e.key === "3") { choose("unsure"); }
+    else if (e.key === "ArrowLeft") { $("prev").click(); }
+    else if (e.key === "ArrowRight") { $("next").click(); }
+  });
+  $("copy").onclick = function () {
+    var box = $("export");
+    box.focus();
+    box.select();
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) {}
+    $("status").textContent = ok ? "Copied." : "Select the text above and copy it.";
+  };
+  render();
+})();
+</script>

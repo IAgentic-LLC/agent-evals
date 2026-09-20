@@ -2,6 +2,12 @@
 
 Every published version of a dataset is frozen. A change is a new version with an entry here, never an edit in place.
 
+## judge_adjudication_v1 and human_label_sample_v1 (2026-09-20)
+
+`judge_adjudication_v1` is made by `scripts/build_adjudication.py` for chapter 17: my decision on each of the 7 real answers where the majority of five judge runs over both passes disagrees with my reading. Two change (`pkg-answers-1:PQ-013` and `pkg-answers-2:PQ-013`, supported to borderline, because the summary of SQLAlchemy does not mention Postgres). The readings file itself is not changed. **Caution:** the same person made the readings and the adjudication, after seeing the judges, which is the weakest adjudication there is.
+
+`human_label_sample_v1` is made by `scripts/build_label_sample.py` (seed 1): 50 items from `judge_items_v1` for a second person to label blind: 7 I read as borderline or stretch, 4 I read as supported that a judge flagged, 31 supported (one per question) and 8 planted faults. The page `label-tool/index.html` shows the question, the package information and the answer, and no label. The stratum column is for the analysis and is not shown to the labeler.
+
 ## judge_items_ch16_v1 and judge_items_ch16_attacks_v1 (2026-09-20)
 
 Made by `agent-evals judge perturb` (`src/agent_evals/bias.py`) for chapter 16, from `judge_items_v1`. Each item is a copy of one original with one change and carries `base_id` and `perturbation`. `_v1` has 364 items: `pad` (137), `reverse_context` (137), `fault_first` (45), `injection` (45). `_attacks_v1` has 135, planted answers only: `injection_json`, `fake_source`, `authority` (45 each). The changes leave what the answer claims alone, apart from the injected notes, and `fake_source` puts the planted sentence in a line that imitates package information. The splits are inherited from the originals, so `--split unseen` still works.

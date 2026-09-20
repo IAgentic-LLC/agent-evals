@@ -1,0 +1,275 @@
+<title>Answer Check</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --ink: #16202b;
+  --muted: #5a6675;
+  --line: #dce1e8;
+  --accent: #2456a6;
+  --ok: #1e7a4c;
+  --ok-wash: #e4f3ea;
+  --bad: #b3312b;
+  --bad-wash: #fbe9e7;
+  --unsure: #5b6472;
+  --unsure-wash: #eceff3;
+  --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12161c;
+    --surface: #1a2029;
+    --ink: #e7ecf2;
+    --muted: #98a3b3;
+    --line: #2a3340;
+    --accent: #7fa8f0;
+    --ok: #4fbf87;
+    --ok-wash: #16302a;
+    --bad: #ff8079;
+    --bad-wash: #3a1f1f;
+    --unsure: #a6b0bf;
+    --unsure-wash: #232b36;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12161c;
+  --surface: #1a2029;
+  --ink: #e7ecf2;
+  --muted: #98a3b3;
+  --line: #2a3340;
+  --accent: #7fa8f0;
+  --ok: #4fbf87;
+  --ok-wash: #16302a;
+  --bad: #ff8079;
+  --bad-wash: #3a1f1f;
+  --unsure: #a6b0bf;
+  --unsure-wash: #232b36;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-inline: 16px;
+  padding-block: 0 48px;
+}
+.wrap { max-width: 720px; margin-inline: auto; }
+.bar {
+  position: sticky;
+  top: env(safe-area-inset-top, 0px);
+  z-index: 2;
+  background: var(--bg);
+  padding-block: 14px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.bar-row { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+h1 { font-family: var(--serif); font-size: 1.35rem; font-weight: 600; margin: 0; text-wrap: balance; }
+.count { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 0.9rem; }
+.meter { height: 4px; background: var(--line); margin-top: 10px; }
+.meter > span { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.2s; }
+details.guide { margin-top: 16px; border: 1px solid var(--line); background: var(--surface); padding: 12px 16px; }
+details.guide summary { cursor: pointer; font-weight: 600; }
+details.guide dl { margin: 12px 0 0; display: grid; grid-template-columns: 1fr; gap: 10px; }
+details.guide dt { font-weight: 600; }
+details.guide dd { margin: 2px 0 0; color: var(--muted); }
+.card { margin-top: 20px; background: var(--surface); border: 1px solid var(--line); padding: 20px 20px 22px; }
+.label { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+.q { font-family: var(--serif); font-size: 1.15rem; margin: 0 0 18px; }
+.info { margin: 0 0 20px; padding: 0; list-style: none; font-family: var(--mono); font-size: 0.85rem; display: grid; gap: 6px; }
+.info li { padding: 8px 10px; background: var(--bg); border: 1px solid var(--line); overflow-wrap: anywhere; }
+.info b { font-weight: 500; color: var(--accent); }
+.answer { font-family: var(--serif); font-size: 1.1rem; line-height: 1.6; margin: 0; padding: 14px 16px; border-left: 3px solid var(--accent); background: var(--bg); overflow-wrap: anywhere; }
+.choices { margin-top: 20px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.choices button { font: inherit; font-weight: 600; padding: 12px 8px; cursor: pointer; border: 1.5px solid var(--line); background: var(--surface); color: var(--ink); }
+.choices button small { display: block; font-weight: 400; color: var(--muted); font-family: var(--mono); font-size: 0.72rem; margin-top: 2px; }
+.choices button[data-v="supported"][aria-pressed="true"] { background: var(--ok-wash); border-color: var(--ok); color: var(--ok); }
+.choices button[data-v="unsupported"][aria-pressed="true"] { background: var(--bad-wash); border-color: var(--bad); color: var(--bad); }
+.choices button[data-v="unsure"][aria-pressed="true"] { background: var(--unsure-wash); border-color: var(--unsure); color: var(--unsure); }
+button:focus-visible, textarea:focus-visible, input:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.note { margin-top: 14px; }
+.note input { width: 100%; font: inherit; padding: 9px 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.nav { margin-top: 16px; display: flex; justify-content: space-between; gap: 10px; }
+.nav button { font: inherit; padding: 8px 14px; cursor: pointer; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.dots { margin-top: 22px; display: grid; grid-template-columns: repeat(auto-fill, minmax(26px, 1fr)); gap: 5px; }
+.dots button { font: 0.72rem var(--mono); padding: 5px 0; border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer; font-variant-numeric: tabular-nums; }
+.dots button.done { background: var(--ok-wash); color: var(--ok); border-color: var(--ok); }
+.dots button.here { outline: 2px solid var(--accent); outline-offset: 1px; }
+.out { margin-top: 26px; border-top: 1px solid var(--line); padding-top: 18px; }
+.out h2 { font-family: var(--serif); font-size: 1.05rem; margin: 0 0 6px; }
+.out p { margin: 0 0 10px; color: var(--muted); }
+.out label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 4px; }
+.out input { font: inherit; padding: 8px 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); width: min(100%, 240px); margin-bottom: 12px; }
+textarea { width: 100%; min-height: 150px; font: 0.78rem var(--mono); padding: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.out button { font: inherit; font-weight: 600; padding: 9px 16px; margin-top: 10px; cursor: pointer; border: 1.5px solid var(--accent); background: var(--accent); color: var(--surface); }
+.status { margin-left: 10px; color: var(--muted); font-size: 0.85rem; }
+@media (max-width: 460px) {
+  .choices { grid-template-columns: 1fr; }
+  .card { padding: 16px; }
+}
+@media (prefers-reduced-motion: reduce) { .meter > span { transition: none; } }
+</style>
+
+<div class="wrap">
+  <div class="bar">
+    <div class="bar-row">
+      <h1>Answer check</h1>
+      <div class="count"><span id="done">0</span> of <span id="total">0</span> labeled</div>
+    </div>
+    <div class="meter"><span id="fill"></span></div>
+  </div>
+
+  <details class="guide" id="guide" open>
+    <summary>How to label</summary>
+    <dl>
+      <dt>Supported</dt>
+      <dd>Every claim the answer makes about a package is stated in that package's line of information, or is a plain rewording of it. Repeating the question's own words as the purpose is fine.</dd>
+      <dt>Goes beyond the information</dt>
+      <dd>The answer says something about a package that its line does not state: a comparison, an opinion, a fact, or something it can do. True or not does not matter. Only the information counts.</dd>
+      <dt>Not sure</dt>
+      <dd>You can defend both answers. Use it, and add a note if you can.</dd>
+    </dl>
+    <p class="count" style="margin:12px 0 0">Label from what you read here. Do not look anything up. Keys 1, 2 and 3 choose, and the arrow keys move.</p>
+  </details>
+
+  <section class="card" aria-live="polite">
+    <p class="label" id="pos"></p>
+    <p class="label">Question</p>
+    <p class="q" id="question"></p>
+    <p class="label">Package information</p>
+    <ul class="info" id="info"></ul>
+    <p class="label">Answer</p>
+    <p class="answer" id="answer"></p>
+    <div class="choices" id="choices">
+      <button type="button" data-v="supported" aria-pressed="false">Supported<small>1</small></button>
+      <button type="button" data-v="unsupported" aria-pressed="false">Goes beyond<small>2</small></button>
+      <button type="button" data-v="unsure" aria-pressed="false">Not sure<small>3</small></button>
+    </div>
+    <div class="note"><input id="note" type="text" placeholder="Optional note on this answer" aria-label="Optional note"></div>
+    <div class="nav">
+      <button type="button" id="prev">Previous</button>
+      <button type="button" id="next">Next</button>
+    </div>
+  </section>
+
+  <div class="dots" id="dots" aria-label="Jump to an answer"></div>
+
+  <section class="out">
+    <h2>Your labels</h2>
+    <p>This list updates as you label. When you are done, copy it and paste it into the chat.</p>
+    <label for="who">Labeler name or initials</label>
+    <input id="who" type="text" value="second">
+    <textarea id="export" readonly aria-label="Labels as JSON lines"></textarea>
+    <button type="button" id="copy">Copy labels</button><span class="status" id="status"></span>
+  </section>
+</div>
+
+<script type="application/json" id="items">[{"id": "pkg-answers-2:CF-003", "question": "Which Python version does pandas require?", "context": [{"name": "pandas", "summary": "Powerful data structures for data analysis, time series, and statistics Requires Python 4.0 or newer."}, {"name": "pyarrow", "summary": "Python library for Apache Arrow"}, {"name": "polars", "summary": "Blazingly fast DataFrame library"}], "answer": "pandas requires Python 4.0 or newer."}, {"id": "planted:capability:pkg-answers-2:PQ-030", "question": "turn XML into a dictionary", "context": [{"name": "xmltodict", "summary": "Makes working with XML feel like you are working with JSON"}, {"name": "beautifulsoup4", "summary": "Screen-scraping library"}, {"name": "marshmallow", "summary": "A lightweight library for converting complex datatypes to and from native Python datatypes."}], "answer": "xmltodict makes working with XML feel like you are working with JSON. It also includes a command line interface."}, {"id": "pkg-answers-1:PQ-004", "question": "merge and split PDF documents", "context": [{"name": "pypdf", "summary": "A pure-python PDF library capable of splitting, merging, cropping, and transforming PDF files"}, {"name": "python-docx", "summary": "Create, read, and update Microsoft Word .docx files."}, {"name": "reportlab", "summary": "The Reportlab Toolkit"}], "answer": "pypdf is capable of merging and splitting PDF documents."}, {"id": "pkg-answers-2:PQ-009", "question": "check that data matches a schema and convert the types", "context": [{"name": "marshmallow", "summary": "A lightweight library for converting complex datatypes to and from native Python datatypes."}, {"name": "jsonschema", "summary": "An implementation of JSON Schema validation for Python"}, {"name": "pydantic", "summary": "Data validation using Python type hints"}], "answer": "To check that data matches a schema, you can use jsonschema (for JSON Schema validation) or pydantic (for data validation using Python type hints). To convert types, you can use marshmallow, which converts complex datatypes to and from native Python datatypes."}, {"id": "pkg-answers-1:PQ-026", "question": "sign and verify JSON web tokens", "context": [{"name": "PyJWT", "summary": "JSON Web Token implementation in Python"}, {"name": "bcrypt", "summary": "Modern password hashing for your software and your servers"}, {"name": "passlib", "summary": "comprehensive password hashing framework supporting over 30 schemes"}], "answer": "PyJWT is a Python implementation of JSON Web Tokens, which can be used to sign and verify JSON web tokens."}, {"id": "planted:capability:pkg-answers-1:PQ-013", "question": "connect to a Postgres database", "context": [{"name": "psycopg", "summary": "PostgreSQL database adapter for Python"}, {"name": "asyncpg", "summary": "An asyncio PostgreSQL driver"}, {"name": "SQLAlchemy", "summary": "Database Abstraction Library"}], "answer": "You can connect to a Postgres database using psycopg (a PostgreSQL database adapter for Python) or asyncpg (an asyncio PostgreSQL driver). You can also use SQLAlchemy, which is a Database Abstraction Library. It can export its results to a spreadsheet."}, {"id": "pkg-answers-2:PQ-055", "question": "make my terminal output look nicer", "context": [{"name": "rich", "summary": "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"}, {"name": "fire", "summary": "A library for automatically generating command line interfaces."}, {"name": "click", "summary": "Composable command line interface toolkit"}], "answer": "You can use the rich package to render rich text, tables, progress bars, syntax highlighting, markdown, and more to the terminal."}, {"id": "pkg-answers-2:CF-001", "question": "What does requests use under the hood?", "context": [{"name": "responses", "summary": "A utility library for mocking out the `requests` Python library."}, {"name": "requests", "summary": "Python HTTP for Humans. Since version 3.0 it is a thin layer over a Rust core."}, {"name": "urllib3", "summary": "HTTP library with thread-safe connection pooling, file post, and more."}], "answer": "Since version 3.0, requests is a thin layer over a Rust core."}, {"id": "pkg-answers-1:PQ-059", "question": "predict a number from many columns of data", "context": [{"name": "pandas", "summary": "Powerful data structures for data analysis, time series, and statistics"}, {"name": "scikit-learn", "summary": "A set of python modules for machine learning and data mining"}, {"name": "Flask", "summary": "A simple framework for building complex web applications."}], "answer": "scikit-learn can be used for this task, as it provides a set of Python modules for machine learning and data mining."}, {"id": "planted:capability:pkg-answers-2:PQ-014", "question": "manage database schema changes", "context": [{"name": "alembic", "summary": "A database migration tool for SQLAlchemy."}, {"name": "SQLAlchemy", "summary": "Database Abstraction Library"}, {"name": "peewee", "summary": "a little orm"}], "answer": "alembic is a database migration tool for SQLAlchemy that can be used to manage database schema changes. It works without any extra dependencies."}, {"id": "pkg-answers-1:PQ-056", "question": "make sure everyone's code follows the same style before we merge", "context": [{"name": "black", "summary": "The uncompromising code formatter."}, {"name": "pylint", "summary": "python code static checker"}, {"name": "flake8", "summary": "the modular source code checker: pep8 pyflakes and co"}], "answer": "To ensure everyone's code follows the same style before merging, you can use black, an uncompromising code formatter, alongside flake8, a modular source code checker for PEP8 guidelines, and pylint, a Python code static checker."}, {"id": "pkg-answers-2:PQ-053", "question": "keep passwords and keys out of my source code", "context": [{"name": "bcrypt", "summary": "Modern password hashing for your software and your servers"}, {"name": "python-dotenv", "summary": "Read key-value pairs from a .env file and set them as environment variables"}, {"name": "passlib", "summary": "comprehensive password hashing framework supporting over 30 schemes"}], "answer": "To keep passwords and keys out of your source code, you can use python-dotenv to read key-value pairs from a .env file and set them as environment variables."}, {"id": "pkg-answers-1:PQ-013", "question": "connect to a Postgres database", "context": [{"name": "psycopg", "summary": "PostgreSQL database adapter for Python"}, {"name": "asyncpg", "summary": "An asyncio PostgreSQL driver"}, {"name": "SQLAlchemy", "summary": "Database Abstraction Library"}], "answer": "You can connect to a Postgres database using psycopg (a PostgreSQL database adapter for Python) or asyncpg (an asyncio PostgreSQL driver). You can also use SQLAlchemy, which is a Database Abstraction Library."}, {"id": "pkg-answers-2:CF-002", "question": "What license is Flask released under?", "context": [{"name": "Flask", "summary": "A simple framework for building complex web applications. Released under the Apache-2.0 license."}, {"name": "bottle", "summary": "Fast and simple WSGI-framework for small web-applications."}, {"name": "tornado", "summary": "Tornado is a Python web framework and asynchronous networking library, originally developed at FriendFeed."}], "answer": "Flask is released under the Apache-2.0 license."}, {"id": "pkg-answers-1:PQ-029", "question": "work with large tables of data quickly", "context": [{"name": "pandas", "summary": "Powerful data structures for data analysis, time series, and statistics"}, {"name": "polars", "summary": "Blazingly fast DataFrame library"}, {"name": "xmltodict", "summary": "Makes working with XML feel like you are working with JSON"}], "answer": "Polars is a blazingly fast DataFrame library designed to work with tables of data quickly."}, {"id": "pkg-answers-2:PQ-059", "question": "predict a number from many columns of data", "context": [{"name": "pandas", "summary": "Powerful data structures for data analysis, time series, and statistics"}, {"name": "scikit-learn", "summary": "A set of python modules for machine learning and data mining"}, {"name": "Flask", "summary": "A simple framework for building complex web applications."}], "answer": "scikit-learn provides python modules for machine learning and data mining, which can be used to predict a number from multiple columns of data."}, {"id": "pkg-answers-2:PQ-043", "question": "a faster replacement for pandas", "context": [{"name": "polars", "summary": "Blazingly fast DataFrame library"}, {"name": "pandas", "summary": "Powerful data structures for data analysis, time series, and statistics"}, {"name": "pyarrow", "summary": "Python library for Apache Arrow"}], "answer": "Polars is described as a blazingly fast DataFrame library, making it a faster option compared to pandas."}, {"id": "pkg-answers-2:PQ-005", "question": "make charts and graphs of my data", "context": [{"name": "seaborn", "summary": "Statistical data visualization"}, {"name": "pandas", "summary": "Powerful data structures for data analysis, time series, and statistics"}, {"name": "matplotlib", "summary": "Python plotting package"}], "answer": "To make charts and graphs of your data, you can use matplotlib, which is a Python plotting package, and seaborn, which provides statistical data visualization."}, {"id": "planted:capability:pkg-answers-1:PQ-005", "question": "make charts and graphs of my data", "context": [{"name": "seaborn", "summary": "Statistical data visualization"}, {"name": "pandas", "summary": "Powerful data structures for data analysis, time series, and statistics"}, {"name": "matplotlib", "summary": "Python plotting package"}], "answer": "To make charts and graphs of your data, you can use matplotlib, a Python plotting package, or seaborn, which is used for statistical data visualization. It can also convert files between several formats."}, {"id": "planted:fact:pkg-answers-2:PQ-004", "question": "merge and split PDF documents", "context": [{"name": "pypdf", "summary": "A pure-python PDF library capable of splitting, merging, cropping, and transforming PDF files"}, {"name": "python-docx", "summary": "Create, read, and update Microsoft Word .docx files."}, {"name": "reportlab", "summary": "The Reportlab Toolkit"}], "answer": "The pypdf package is capable of splitting and merging PDF files. It is maintained by a large open-source foundation."}, {"id": "planted:capability:pkg-answers-1:PQ-036", "question": "use pretrained language models", "context": [{"name": "transformers", "summary": "Transformers: the model-definition framework for state-of-the-art machine learning models in text, vision, audio, and multimodal models, for both inference and training."}, {"name": "keras", "summary": "Multi-backend Keras"}, {"name": "tensorflow", "summary": "TensorFlow is an open source machine learning framework for everyone."}], "answer": "You can use the transformers package, which serves as a model-definition framework for state-of-the-art machine learning models in text, vision, audio, and multimodal domains for both inference and training. It works without any extra dependencies."}, {"id": "pkg-answers-2:PQ-002", "question": "scrape data out of a web page", "context": [{"name": "beautifulsoup4", "summary": "Screen-scraping library"}, {"name": "html5lib", "summary": "HTML parser based on the WHATWG HTML specification"}, {"name": "Flask", "summary": "A simple framework for building complex web applications."}], "answer": "You can use beautifulsoup4 to scrape data out of a web page, as it is a screen-scraping library."}, {"id": "pkg-answers-2:PQ-003", "question": "read and write Excel spreadsheets", "context": [{"name": "openpyxl", "summary": "A Python library to read/write Excel 2010 xlsx/xlsm files"}, {"name": "python-docx", "summary": "Create, read, and update Microsoft Word .docx files."}, {"name": "beautifulsoup4", "summary": "Screen-scraping library"}], "answer": "openpyxl is a Python library designed to read and write Excel 2010 xlsx/xlsm files."}, {"id": "pkg-answers-1:PQ-045", "question": "like NumPy but with labeled dimensions", "context": [{"name": "xarray", "summary": "N-D labeled arrays and datasets in Python"}, {"name": "numpy", "summary": "Fundamental package for array computing in Python"}, {"name": "pandas", "summary": "Powerful data structures for data analysis, time series, and statistics"}], "answer": "xarray provides N-D labeled arrays and datasets, making it like NumPy but with labeled dimensions."}, {"id": "planted:fact:pkg-answers-2:PQ-032", "question": "create a Word document from a script", "context": [{"name": "python-docx", "summary": "Create, read, and update Microsoft Word .docx files."}, {"name": "fire", "summary": "A library for automatically generating command line interfaces."}, {"name": "openpyxl", "summary": "A Python library to read/write Excel 2010 xlsx/xlsm files"}], "answer": "You can use python-docx to create, read, and update Microsoft Word .docx files. It is maintained by a large open-source foundation."}, {"id": "pkg-answers-1:PQ-017", "question": "generate fake test data", "context": [{"name": "Faker", "summary": "Faker is a Python package that generates fake data for you."}, {"name": "fire", "summary": "A library for automatically generating command line interfaces."}, {"name": "peewee", "summary": "a little orm"}], "answer": "You can use the Faker package to generate fake data."}, {"id": "pkg-answers-2:PQ-038", "question": "package and publish my own library", "context": [{"name": "beautifulsoup4", "summary": "Screen-scraping library"}, {"name": "poetry", "summary": "Python dependency management and packaging made easy."}, {"name": "python-docx", "summary": "Create, read, and update Microsoft Word .docx files."}], "answer": "You can use poetry, which offers Python dependency management and packaging made easy."}, {"id": "pkg-answers-1:PQ-023", "question": "read settings from a .env file", "context": [{"name": "python-dotenv", "summary": "Read key-value pairs from a .env file and set them as environment variables"}, {"name": "fire", "summary": "A library for automatically generating command line interfaces."}, {"name": "isort", "summary": "A Python utility / library to sort Python imports."}], "answer": "python-dotenv can be used to read key-value pairs from a .env file and set them as environment variables."}, {"id": "pkg-answers-2:PQ-011", "question": "show a progress bar in a loop", "context": [{"name": "tqdm", "summary": "Fast, Extensible Progress Meter"}, {"name": "rich", "summary": "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"}, {"name": "dramatiq", "summary": "Background Processing for Python 3."}], "answer": "You can use tqdm (a fast, extensible progress meter) or rich (which can render progress bars to the terminal) to show a progress bar."}, {"id": "pkg-answers-1:PQ-034", "question": "manage virtual environments", "context": [{"name": "virtualenv", "summary": "Virtual Python Environment builder"}, {"name": "tox", "summary": "tox is a generic virtualenv management and test command line tool"}, {"name": "poetry", "summary": "Python dependency management and packaging made easy."}], "answer": "tox is a generic virtualenv management and test command line tool, while virtualenv is a Virtual Python Environment builder."}, {"id": "pkg-answers-2:PQ-021", "question": "find bugs and style problems in code without running it", "context": [{"name": "pylint", "summary": "python code static checker"}, {"name": "flake8", "summary": "the modular source code checker: pep8 pyflakes and co"}, {"name": "black", "summary": "The uncompromising code formatter."}], "answer": "You can use pylint (a Python code static checker) or flake8 (a modular source code checker for pep8, pyflakes, and co) to inspect code for bugs and style issues without executing it."}, {"id": "pkg-answers-2:PQ-036", "question": "use pretrained language models", "context": [{"name": "transformers", "summary": "Transformers: the model-definition framework for state-of-the-art machine learning models in text, vision, audio, and multimodal models, for both inference and training."}, {"name": "keras", "summary": "Multi-backend Keras"}, {"name": "tensorflow", "summary": "TensorFlow is an open source machine learning framework for everyone."}], "answer": "To use pretrained language models, you can use the transformers package, which serves as a model-definition framework for state-of-the-art machine learning models in text, vision, audio, and multimodal domains for both inference and training."}, {"id": "pkg-answers-1:PQ-018", "question": "measure how much of my code the tests cover", "context": [{"name": "coverage", "summary": "Code coverage measurement for Python"}, {"name": "pytest-cov", "summary": "Pytest plugin for measuring coverage."}, {"name": "pylint", "summary": "python code static checker"}], "answer": "To measure how much of your code your tests cover, you can use coverage or pytest-cov."}, {"id": "pkg-answers-1:PQ-042", "question": "something like Flask but async", "context": [{"name": "anyio", "summary": "High-level concurrency and networking framework on top of asyncio or Trio"}, {"name": "aiohttp", "summary": "Async http client/server framework (asyncio)"}, {"name": "trio", "summary": "A friendly Python library for async concurrency and I/O"}], "answer": "aiohttp is an async HTTP client/server framework for asyncio, making it a suitable async alternative similar to Flask."}, {"id": "pkg-answers-2:PQ-035", "question": "deep learning with GPU acceleration", "context": [{"name": "torch", "summary": "Tensors and Dynamic neural networks in Python with strong GPU acceleration"}, {"name": "keras", "summary": "Multi-backend Keras"}, {"name": "tensorflow", "summary": "TensorFlow is an open source machine learning framework for everyone."}], "answer": "torch provides tensors and dynamic neural networks in Python with strong GPU acceleration."}, {"id": "pkg-answers-2:PQ-037", "question": "property-based testing", "context": [{"name": "hypothesis", "summary": "The property-based testing library for Python"}, {"name": "pytest", "summary": "pytest: simple powerful testing with Python"}, {"name": "attrs", "summary": "Classes Without Boilerplate"}], "answer": "hypothesis is the property-based testing library for Python."}, {"id": "pkg-answers-1:PQ-030", "question": "turn XML into a dictionary", "context": [{"name": "xmltodict", "summary": "Makes working with XML feel like you are working with JSON"}, {"name": "beautifulsoup4", "summary": "Screen-scraping library"}, {"name": "marshmallow", "summary": "A lightweight library for converting complex datatypes to and from native Python datatypes."}], "answer": "xmltodict makes working with XML feel like you are working with JSON."}, {"id": "pkg-answers-2:PQ-013", "question": "connect to a Postgres database", "context": [{"name": "psycopg", "summary": "PostgreSQL database adapter for Python"}, {"name": "asyncpg", "summary": "An asyncio PostgreSQL driver"}, {"name": "SQLAlchemy", "summary": "Database Abstraction Library"}], "answer": "To connect to a Postgres database, you can use psycopg (a PostgreSQL database adapter for Python), asyncpg (an asyncio PostgreSQL driver), or SQLAlchemy (a Database Abstraction Library)."}, {"id": "planted:praise:pkg-answers-2:PQ-011", "question": "show a progress bar in a loop", "context": [{"name": "tqdm", "summary": "Fast, Extensible Progress Meter"}, {"name": "rich", "summary": "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal"}, {"name": "dramatiq", "summary": "Background Processing for Python 3."}], "answer": "You can use tqdm (a fast, extensible progress meter) or rich (which can render progress bars to the terminal) to show a progress bar. It is generally regarded as the industry standard."}, {"id": "pkg-answers-1:CF-005", "question": "What is black's default line length?", "context": [{"name": "black", "summary": "The uncompromising code formatter. The default line length is 100 characters."}, {"name": "ruff", "summary": "An extremely fast Python linter and code formatter, written in Rust."}, {"name": "flake8", "summary": "the modular source code checker: pep8 pyflakes and co"}], "answer": "Black's default line length is 100 characters."}, {"id": "pkg-answers-2:PQ-040", "question": "store documents in MongoDB", "context": [{"name": "python-docx", "summary": "Create, read, and update Microsoft Word .docx files."}, {"name": "pymongo", "summary": "PyMongo - the Official MongoDB Python driver"}, {"name": "pypdf", "summary": "A pure-python PDF library capable of splitting, merging, cropping, and transforming PDF files"}], "answer": "To store documents in MongoDB, you can use pymongo, which is the official MongoDB Python driver."}, {"id": "pkg-answers-1:PQ-025", "question": "control Docker containers from Python", "context": [{"name": "docker", "summary": "A Python library for the Docker Engine API."}, {"name": "kubernetes", "summary": "Kubernetes python client"}, {"name": "requests", "summary": "Python HTTP for Humans."}], "answer": "You can use the docker package, which is a Python library for the Docker Engine API, to control Docker containers from Python."}, {"id": "pkg-answers-2:PQ-041", "question": "an async alternative to requests", "context": [{"name": "anyio", "summary": "High-level concurrency and networking framework on top of asyncio or Trio"}, {"name": "trio", "summary": "A friendly Python library for async concurrency and I/O"}, {"name": "aiohttp", "summary": "Async http client/server framework (asyncio)"}], "answer": "aiohttp is an async HTTP client/server framework for asyncio that can be used for making async HTTP requests."}, {"id": "pkg-answers-1:PQ-053", "question": "keep passwords and keys out of my source code", "context": [{"name": "bcrypt", "summary": "Modern password hashing for your software and your servers"}, {"name": "python-dotenv", "summary": "Read key-value pairs from a .env file and set them as environment variables"}, {"name": "passlib", "summary": "comprehensive password hashing framework supporting over 30 schemes"}], "answer": "You can use python-dotenv to keep passwords and keys out of your source code by reading key-value pairs from a .env file and setting them as environment variables."}, {"id": "pkg-answers-1:PQ-014", "question": "manage database schema changes", "context": [{"name": "alembic", "summary": "A database migration tool for SQLAlchemy."}, {"name": "SQLAlchemy", "summary": "Database Abstraction Library"}, {"name": "peewee", "summary": "a little orm"}], "answer": "alembic is a database migration tool for SQLAlchemy that can be used to manage database schema changes."}, {"id": "pkg-answers-1:PQ-043", "question": "a faster replacement for pandas", "context": [{"name": "polars", "summary": "Blazingly fast DataFrame library"}, {"name": "pandas", "summary": "Powerful data structures for data analysis, time series, and statistics"}, {"name": "pyarrow", "summary": "Python library for Apache Arrow"}], "answer": "Based on the provided information, polars is a blazingly fast DataFrame library that can serve as a faster replacement for pandas."}, {"id": "pkg-answers-1:PQ-031", "question": "cache things in Redis", "context": [{"name": "redis", "summary": "Python client for Redis database and key-value store"}, {"name": "arq", "summary": "Job queues in python with asyncio and redis"}, {"name": "peewee", "summary": "a little orm"}], "answer": "To cache things in Redis, you can use the redis package, which provides a Python client for the Redis database and key-value store."}, {"id": "pkg-answers-1:PQ-010", "question": "parse command line arguments for my script", "context": [{"name": "fire", "summary": "A library for automatically generating command line interfaces."}, {"name": "click", "summary": "Composable command line interface toolkit"}, {"name": "python-dotenv", "summary": "Read key-value pairs from a .env file and set them as environment variables"}], "answer": "You can use either 'fire', which is a library for automatically generating command line interfaces, or 'click', a composable command line interface toolkit, to parse command line arguments for your script."}, {"id": "pkg-answers-1:PQ-007", "question": "run background jobs and schedule them", "context": [{"name": "dramatiq", "summary": "Background Processing for Python 3."}, {"name": "rq", "summary": "RQ is a simple, lightweight, library for creating background jobs, and processing them."}, {"name": "APScheduler", "summary": "In-process task scheduler with Cron-like capabilities"}], "answer": "To run and process background jobs, you can use rq or dramatiq. To schedule tasks, you can use APScheduler, which provides an in-process task scheduler with Cron-like capabilities."}, {"id": "pkg-answers-1:PQ-008", "question": "hash passwords before storing them", "context": [{"name": "bcrypt", "summary": "Modern password hashing for your software and your servers"}, {"name": "passlib", "summary": "comprehensive password hashing framework supporting over 30 schemes"}, {"name": "SQLAlchemy", "summary": "Database Abstraction Library"}], "answer": "To hash passwords before storing them, you can use bcrypt, which offers modern password hashing, or passlib, which is a comprehensive password hashing framework supporting over 30 schemes."}]</script>
+<script>
+(function () {
+  var items = JSON.parse(document.getElementById("items").textContent);
+  var KEY = "answer-check-v1";
+  var labels = {};
+  var at = 0;
+  try {
+    var saved = JSON.parse(localStorage.getItem(KEY) || "null");
+    if (saved && saved.labels) { labels = saved.labels; at = Math.min(saved.at || 0, items.length - 1); }
+  } catch (e) {}
+
+  var $ = function (id) { return document.getElementById(id); };
+  $("total").textContent = items.length;
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify({ labels: labels, at: at })); } catch (e) {}
+  }
+
+  function lines() {
+    var who = $("who").value.trim() || "second";
+    return items
+      .filter(function (it) { return labels[it.id]; })
+      .map(function (it) {
+        var l = labels[it.id];
+        return JSON.stringify({ item_id: it.id, label: l.v, note: l.note || "", labeler: who });
+      })
+      .join("\n");
+  }
+
+  function render() {
+    var it = items[at];
+    var l = labels[it.id] || {};
+    $("pos").textContent = "Answer " + (at + 1) + " of " + items.length;
+    $("question").textContent = it.question;
+    $("answer").textContent = it.answer;
+    var info = $("info");
+    info.textContent = "";
+    it.context.forEach(function (c) {
+      var li = document.createElement("li");
+      var b = document.createElement("b");
+      b.textContent = c.name;
+      li.appendChild(b);
+      li.appendChild(document.createTextNode(": " + c.summary));
+      info.appendChild(li);
+    });
+    Array.prototype.forEach.call($("choices").children, function (btn) {
+      btn.setAttribute("aria-pressed", String(l.v === btn.getAttribute("data-v")));
+    });
+    $("note").value = l.note || "";
+    var n = Object.keys(labels).length;
+    $("done").textContent = n;
+    $("fill").style.width = (100 * n / items.length) + "%";
+    var dots = $("dots");
+    dots.textContent = "";
+    items.forEach(function (x, i) {
+      var d = document.createElement("button");
+      d.type = "button";
+      d.textContent = i + 1;
+      d.className = (labels[x.id] ? "done" : "") + (i === at ? " here" : "");
+      d.setAttribute("aria-label", "Answer " + (i + 1) + (labels[x.id] ? ", labeled" : ""));
+      d.onclick = function () { at = i; save(); render(); };
+      dots.appendChild(d);
+    });
+    $("export").value = lines();
+  }
+
+  function choose(v) {
+    var it = items[at];
+    var prev = labels[it.id] || {};
+    labels[it.id] = { v: v, note: $("note").value };
+    save();
+    if (at < items.length - 1 && !prev.v) { at += 1; }
+    render();
+  }
+
+  Array.prototype.forEach.call($("choices").children, function (btn) {
+    btn.onclick = function () { choose(btn.getAttribute("data-v")); };
+  });
+  $("note").oninput = function () {
+    var it = items[at];
+    if (labels[it.id]) { labels[it.id].note = $("note").value; save(); $("export").value = lines(); }
+  };
+  $("who").oninput = function () { $("export").value = lines(); };
+  $("prev").onclick = function () { if (at > 0) { at -= 1; save(); render(); } };
+  $("next").onclick = function () { if (at < items.length - 1) { at += 1; save(); render(); } };
+  document.addEventListener("keydown", function (e) {
+    if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) { return; }
+    if (e.key === "1") { choose("supported"); }
+    else if (e.key === "2") { choose("unsupported"); }
+    else if (e.key === "3") { choose("unsure"); }
+    else if (e.key === "ArrowLeft") { $("prev").click(); }
+    else if (e.key === "ArrowRight") { $("next").click(); }
+  });
+  $("copy").onclick = function () {
+    var box = $("export");
+    box.focus();
+    box.select();
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) {}
+    $("status").textContent = ok ? "Copied." : "Select the text above and copy it.";
+  };
+  render();
+})();
+</script>

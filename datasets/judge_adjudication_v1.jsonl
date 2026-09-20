@@ -1,0 +1,7 @@
+{"item_id": "pkg-answers-1:PQ-013", "was": "supported", "decision": "borderline", "judges_flagged": "6 of 10", "reason": "SQLAlchemy is offered as a way to connect to Postgres. Its summary, 'Database Abstraction Library', does not mention Postgres. The judges are right."}
+{"item_id": "pkg-answers-2:PQ-013", "was": "supported", "decision": "borderline", "judges_flagged": "5 of 10", "reason": "The same claim about SQLAlchemy and Postgres, in the second run's words."}
+{"item_id": "pkg-answers-1:PQ-042", "was": "stretch", "decision": "stretch", "judges_flagged": "4 of 10", "reason": "'Similar to Flask' relates aiohttp to Flask, which no summary does. Most judges pass it. I keep my reading and mark it as one for a second person."}
+{"item_id": "pkg-answers-1:PQ-053", "was": "borderline", "decision": "borderline", "judges_flagged": "0 of 10", "reason": "The purpose, keeping secrets out of code, comes from the question. No judge flags it. It is the kind of case I defined borderline for, so it stays."}
+{"item_id": "pkg-answers-2:PQ-053", "was": "borderline", "decision": "borderline", "judges_flagged": "0 of 10", "reason": "Same as the first run."}
+{"item_id": "pkg-answers-1:PQ-059", "was": "borderline", "decision": "borderline", "judges_flagged": "0 of 10", "reason": "The summary says machine learning and does not name regression. No judge flags it. It stays borderline."}
+{"item_id": "pkg-answers-2:PQ-059", "was": "borderline", "decision": "borderline", "judges_flagged": "0 of 10", "reason": "Same as the first run."}

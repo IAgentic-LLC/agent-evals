@@ -20,6 +20,7 @@ from agent_evals import (
     invariants,
     judge,
     judge_report,
+    labels,
     tool_calls,
     trajectory,
     world,
@@ -571,6 +572,45 @@ def cmd_judge_report(args) -> int:
     return 0
 
 
+def cmd_labels(args) -> int:
+    items = labels.item_list()
+    truth = labels.author_labels(items, args.convention, args.adjudicated)
+    part = args.part
+    if part == "matrix":
+        raters = {
+            Path(r).name.replace("judge-", ""): labels.judge_labels(r)
+            for r in args.judge
+        }
+        print(labels.render_matrix(items, raters, truth, args.group), end="")
+    elif part == "retest":
+        print(labels.render_retest(items, [Path(r).name for r in args.judge]), end="")
+    elif part == "sensitivity":
+        print(
+            labels.render_sensitivity(items, truth, labels.judge_labels(args.judge[0])),
+            end="",
+        )
+    elif part == "calibrate":
+        name = Path(args.judge[0]).name.replace("judge-", "")
+        print(
+            labels.render_calibration(
+                items, truth, labels.judge_labels(args.judge[0]), name
+            ),
+            end="",
+        )
+    elif part == "plan":
+        print(
+            labels.render_plan(0.85, 0.97, 0.08, (50, 100, 200, 400, 800), (100, 400)),
+            end="",
+        )
+    elif part == "second":
+        from agent_evals import agreement
+
+        second = agreement.load_labels(args.second)
+        judged = labels.judge_labels(args.judge[0])
+        print(labels.render_second(items, second, truth, judged), end="")
+    return 0
+
+
 def _forced_inputs(args):
     runs = {
         r: read_traces(Path("runs") / r / "traces.jsonl")
@@ -845,6 +885,18 @@ def main(argv: list[str] | None = None) -> int:
         required=True,
     )
     p_jp.set_defaults(func=cmd_judge_report)
+    p_lb = sub.add_parser("labels", help="agreement between people and judges")
+    p_lb.add_argument(
+        "--part",
+        choices=("matrix", "retest", "sensitivity", "calibrate", "plan", "second"),
+        required=True,
+    )
+    p_lb.add_argument("--judge", nargs="*", default=[])
+    p_lb.add_argument("--group", choices=("real", "all", "planted"), default="real")
+    p_lb.add_argument("--convention", choices=("strict", "lenient"), default="strict")
+    p_lb.add_argument("--adjudicated", action="store_true")
+    p_lb.add_argument("--second", help="a label file from a second person")
+    p_lb.set_defaults(func=cmd_labels)
     p_fo = sub.add_parser("forced", help="the answers that follow three empty searches")
     p_fo.add_argument("--readings", default="datasets/triage_forced.readings.jsonl")
     p_fo.add_argument("--part", choices=("readings", "proxies"), required=True)
