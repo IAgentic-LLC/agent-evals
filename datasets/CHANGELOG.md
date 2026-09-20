@@ -2,6 +2,10 @@
 
 Every published version of a dataset is frozen. A change is a new version with an entry here, never an edit in place.
 
+## judge_items_ch16_v1 and judge_items_ch16_attacks_v1 (2026-09-20)
+
+Made by `agent-evals judge perturb` (`src/agent_evals/bias.py`) for chapter 16, from `judge_items_v1`. Each item is a copy of one original with one change and carries `base_id` and `perturbation`. `_v1` has 364 items: `pad` (137), `reverse_context` (137), `fault_first` (45), `injection` (45). `_attacks_v1` has 135, planted answers only: `injection_json`, `fake_source`, `authority` (45 each). The changes leave what the answer claims alone, apart from the injected notes, and `fake_source` puts the planted sentence in a line that imitates package information. The splits are inherited from the originals, so `--split unseen` still works.
+
 ## judge_items_v1 (2026-09-20)
 
 Made by `scripts/build_judge_items.py` for chapter 15, from the recorded answers of chapter 13 and my readings of them. 137 items: 92 `real` (the answers that cite something; label from my reading: 85 supported, 6 borderline, 1 stretch) and 45 `planted`. A planted item is an answer I read as supported (counterfactual answers excluded), copied with one sentence added that the retrieved summaries do not state: 15 `praise`, 15 `fact`, 15 `capability`. The 45 originals carry `clean_of_planted` and are the negatives. `real` items alternate `dev` and `test`; a planted copy is in the same half as its original, with the kinds cycling within each half. Random choices use seed 0.
