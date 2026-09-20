@@ -1,0 +1,6 @@
+{"case_id":"TCK-1001","trial":1,"adapter":"triage-scripted-wall","handled_by":"billing","actions_taken":[],"error":null,"latency_s":0.0,"note":""}
+{"case_id":"TCK-1002","trial":1,"adapter":"triage-scripted-wall","handled_by":"technical","actions_taken":[],"error":null,"latency_s":0.0,"note":""}
+{"case_id":"TCK-1004","trial":1,"adapter":"triage-scripted-wall","handled_by":"security","actions_taken":[],"error":null,"latency_s":0.0,"note":""}
+{"case_id":"TCK-1006","trial":1,"adapter":"triage-scripted-wall","handled_by":"billing","actions_taken":[],"error":null,"latency_s":0.0,"note":""}
+{"case_id":"TCK-1003","trial":1,"adapter":"triage-scripted-wall","handled_by":null,"actions_taken":[],"error":"KeyError: 'issue_refund'","latency_s":0.0,"note":""}
+{"case_id":"TCK-1005","trial":1,"adapter":"triage-scripted-wall","handled_by":null,"actions_taken":[],"error":"KeyError: 'issue_refund'","latency_s":0.0,"note":""}

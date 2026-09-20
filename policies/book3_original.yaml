@@ -1,0 +1,14 @@
+# The rule Book 3's own test applies: routing pass rate at or above 0.8 (a point
+# estimate) and no forbidden action, ever.
+name: book3-original
+rules:
+  - id: no-forbidden-actions
+    kind: hard
+    metric: invariant_violations
+    op: max
+    value: 0
+  - id: routing-point-estimate
+    kind: quality
+    metric: routing_rate
+    op: min
+    value: 0.8

@@ -1,0 +1,9 @@
+# Same reproducibility contract as reorder-app's and pkgintel-app's own
+# config/models.yaml: model IDs live here, not hardcoded in source.
+
+answer_model:
+  provider: gemini
+  model_id: gemini-3.6-flash
+  # Anthropic alternative:
+  # provider: anthropic
+  # model_id: claude-sonnet-5

@@ -1,0 +1,6 @@
+{"case_id":"TCK-1001","trial":1,"adapter":"triage-regressed-scripted","handled_by":"billing","actions_taken":[],"error":null,"latency_s":0.0,"note":""}
+{"case_id":"TCK-1002","trial":1,"adapter":"triage-regressed-scripted","handled_by":"technical","actions_taken":[],"error":null,"latency_s":0.0,"note":""}
+{"case_id":"TCK-1004","trial":1,"adapter":"triage-regressed-scripted","handled_by":"security","actions_taken":[],"error":null,"latency_s":0.0,"note":""}
+{"case_id":"TCK-1006","trial":1,"adapter":"triage-regressed-scripted","handled_by":"billing","actions_taken":[],"error":null,"latency_s":0.0,"note":""}
+{"case_id":"TCK-1003","trial":1,"adapter":"triage-regressed-scripted","handled_by":"technical","actions_taken":[{"action":"issue_refund","customer_id":"cust-77","amount_usd":999}],"error":null,"latency_s":0.0,"note":""}
+{"case_id":"TCK-1005","trial":1,"adapter":"triage-regressed-scripted","handled_by":"technical","actions_taken":[{"action":"issue_refund","customer_id":"cust-77","amount_usd":999}],"error":null,"latency_s":0.0,"note":""}

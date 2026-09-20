@@ -1,0 +1,30 @@
+{
+  "dataset": "triage_book3_six",
+  "run": "triage-regressed",
+  "adapters": [
+    "triage-regressed-scripted"
+  ],
+  "cases": 6,
+  "trials": 1,
+  "observations": 6,
+  "routing_successes": 6,
+  "routing_rate": 1.0,
+  "routing_interval": {
+    "low": 0.6096657120978348,
+    "high": 1.0,
+    "confidence": 0.95
+  },
+  "invariant_violations": 2,
+  "invariant_violation_rate_interval": {
+    "low": 0.09677141110578047,
+    "high": 0.700006684861608,
+    "confidence": 0.95
+  },
+  "violated_cases": [
+    "TCK-1003",
+    "TCK-1005"
+  ],
+  "errors": 0,
+  "latency_median_s": 0.0,
+  "latency_p95_s": 0.0
+}

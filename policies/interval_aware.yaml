@@ -1,0 +1,14 @@
+# The same idea, honest about uncertainty: the lower end of the 95% interval must
+# be at or above 0.8, and no forbidden action, ever.
+name: interval-aware
+rules:
+  - id: no-forbidden-actions
+    kind: hard
+    metric: invariant_violations
+    op: max
+    value: 0
+  - id: routing-lower-bound
+    kind: quality
+    metric: routing_rate_lower
+    op: min
+    value: 0.8

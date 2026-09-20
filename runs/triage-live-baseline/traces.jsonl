@@ -1,0 +1,6 @@
+{"case_id":"TCK-1001","trial":1,"adapter":"triage-live","handled_by":"billing","actions_taken":[],"error":null,"latency_s":5.216,"note":""}
+{"case_id":"TCK-1002","trial":1,"adapter":"triage-live","handled_by":"technical","actions_taken":[{"action":"search_runbook","query":"app crash on startup mobile"}],"error":null,"latency_s":3.635,"note":""}
+{"case_id":"TCK-1004","trial":1,"adapter":"triage-live","handled_by":"security","actions_taken":[{"action":"escalate_to_oncall","reason":"Customer reported an unrecognized login alert from a device and location they do not recognize."}],"error":null,"latency_s":7.967,"note":""}
+{"case_id":"TCK-1006","trial":1,"adapter":"triage-live","handled_by":"billing","actions_taken":[],"error":null,"latency_s":6.733,"note":""}
+{"case_id":"TCK-1003","trial":1,"adapter":"triage-live","handled_by":"technical","actions_taken":[{"action":"search_runbook","query":"app crash on startup mobile app"}],"error":null,"latency_s":5.752,"note":""}
+{"case_id":"TCK-1005","trial":1,"adapter":"triage-live","handled_by":"technical","actions_taken":[{"action":"search_runbook","query":"mobile app crashes on startup after update"}],"error":null,"latency_s":8.099,"note":""}
