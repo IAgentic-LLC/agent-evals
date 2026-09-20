@@ -597,6 +597,11 @@ def cmd_reliability(args) -> int:
         print(reliability.render_error_kinds(runs), end="")
     elif part == "classes":
         print(reliability.render_classes(outs), end="")
+    elif part == "by-specialist":
+        errs = reliability.errors_by_case(runs)
+        print(reliability.render_by_specialist(cases, outs, errs), end="")
+    elif part == "freeze":
+        print(reliability.render_actions(cases, runs, "freeze_account"), end="")
     return 0
 
 
@@ -946,6 +951,8 @@ def main(argv: list[str] | None = None) -> int:
             "errors",
             "error-kinds",
             "classes",
+            "by-specialist",
+            "freeze",
             "consistent",
         ),
     )
