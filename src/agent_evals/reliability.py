@@ -134,7 +134,7 @@ def _span(interval: tuple[float, float]) -> str:
 
 def render_trials(cases, names, traces_by_run) -> str:
     """Each recorded run on its own: how many cases met the required actions."""
-    lines = [f"{'run':<26}{'cases met':>12}{'95% interval':>16}{'errors':>9}"]
+    lines = [f"{'run':<32}{'cases met':>12}{'95% interval':>16}{'errors':>9}"]
     for name, traces in zip(names, traces_by_run):
         by_trial: dict[int, list[Trace]] = {}
         for t in traces:
@@ -144,7 +144,7 @@ def render_trials(cases, names, traces_by_run) -> str:
             label = name if len(by_trial) == 1 else f"{name} trial {trial}"
             errs = sum(t.error is not None for t in group)
             lines.append(
-                f"{label:<26}{f'{k} of {len(group)}':>12}"
+                f"{label:<32}{f'{k} of {len(group)}':>12}"
                 f"{_span(wilson_interval(k, len(group))):>16}{errs:>9}"
             )
     return "\n".join(lines) + "\n"
@@ -271,4 +271,51 @@ def render_error_kinds(traces_by_run: list[list[Trace]]) -> str:
     for kind, n in sorted(counts.items(), key=lambda kv: -kv[1]):
         lines.append(f"{kind:<28}{n:>6}")
     lines.append(f"{'runs in all':<28}{total:>6}")
+    return "\n".join(lines) + "\n"
+
+
+def render_by_specialist(
+    cases: dict[str, EvalCase],
+    outs: dict[str, list[bool]],
+    errs: dict[str, list[bool]],
+) -> str:
+    """Tickets by the specialist they belong to: always, never or sometimes
+    succeeding, and how many of their runs ended in an error."""
+    lines = [
+        f"{'belongs to':<12}{'tickets':>8}{'always':>8}{'never':>7}{'sometimes':>11}"
+        + f"{'error runs':>12}"
+    ]
+    for name in ("billing", "security", "technical"):
+        mine = [c for c in outs if cases[c].expected["handled_by"] == name]
+        always, never, sometimes = split_counts({c: outs[c] for c in mine})
+        errors = sum(sum(errs[c]) for c in mine)
+        lines.append(
+            f"{name:<12}{len(mine):>8}{always:>8}{never:>7}{sometimes:>11}{errors:>12}"
+        )
+    return "\n".join(lines) + "\n"
+
+
+def render_actions(
+    cases: dict[str, EvalCase], traces_by_run: list[list[Trace]], action: str
+) -> str:
+    """How many tickets took an action in 0, 1, ... of their trials, and how many runs
+    took a forbidden action at all."""
+    per_case: dict[str, int] = {}
+    total = forbidden = 0
+    n_trials = 0
+    for traces in traces_by_run:
+        for t in traces:
+            total += 1
+            forbidden += bool(grade(cases[t.case_id], t).forbidden_actions_taken)
+            took = any(a.get("action") == action for a in t.actions_taken)
+            per_case[t.case_id] = per_case.get(t.case_id, 0) + took
+    n_trials = total // len(per_case)
+    counts: dict[int, int] = {}
+    for c in per_case.values():
+        counts[c] = counts.get(c, 0) + 1
+    lines = [f"{action + ' in n of ' + str(n_trials) + ' trials':<32}{'tickets':>8}"]
+    for c in range(n_trials + 1):
+        lines.append(f"{f'{c} of {n_trials}':<32}{counts.get(c, 0):>8}")
+    lines.append("")
+    lines.append(f"runs that took a forbidden action: {forbidden} of {total}")
     return "\n".join(lines) + "\n"

@@ -172,3 +172,20 @@ def test_the_reliability_reports_fit_the_page(capsys):
         assert cli.main(["reliability", "--part", part]) == 0
     for line in capsys.readouterr().out.splitlines():
         assert len(line) <= 78, line
+
+
+def test_the_errors_sit_on_the_technical_tickets():
+    cases, runs = _recorded()
+    outs = reliability.outcomes(cases, runs)
+    errs = reliability.errors_by_case(runs)
+    text = _flat(reliability.render_by_specialist(cases, outs, errs))
+    assert "billing 13 12 0 1 2" in text
+    assert "security 12 8 2 2 0" in text
+    assert "technical 17 2 10 5 98" in text
+
+
+def test_the_unrequired_freeze_repeats_on_nine_tickets_and_no_forbidden_action_occurs():
+    cases, runs = _recorded()
+    text = _flat(reliability.render_actions(cases, runs, "freeze_account"))
+    assert "8 of 8 9" in text and "0 of 8 32" in text and "2 of 8 1" in text
+    assert "runs that took a forbidden action: 0 of 336" in text
