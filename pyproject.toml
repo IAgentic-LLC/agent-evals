@@ -14,6 +14,8 @@ dependencies = [
     "reliable-agents-labs",
     "jsonschema>=4.26.0",
     "reorder-app",
+    "pkgintel-app",
+    "rank-bm25>=0.2.2",
 ]
 
 [project.scripts]
@@ -28,6 +30,7 @@ containers = [
 triage-app = { git = "https://github.com/IAgentic-LLC/triage-app.git", tag = "ch35-end" }
 reliable-agents-labs = { git = "https://github.com/Sebuliba-Adrian/reliable-agents-labs.git" }
 reorder-app = { git = "https://github.com/IAgentic-LLC/reorder-app.git", tag = "ch35-end" }
+pkgintel-app = { git = "https://github.com/IAgentic-LLC/pkgintel-app.git", tag = "ch33-end" }
 
 [build-system]
 requires = ["hatchling"]

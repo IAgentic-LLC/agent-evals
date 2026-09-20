@@ -1,0 +1,107 @@
+{"name": "requests", "version": "2.34.2", "summary": "Python HTTP for Humans.", "topic": "http", "fetched_at": "2026-09-20"}
+{"name": "httpx", "version": "0.28.1", "summary": "The next generation HTTP client.", "topic": "http", "fetched_at": "2026-09-20"}
+{"name": "aiohttp", "version": "3.14.3", "summary": "Async http client/server framework (asyncio)", "topic": "http", "fetched_at": "2026-09-20"}
+{"name": "urllib3", "version": "2.8.0", "summary": "HTTP library with thread-safe connection pooling, file post, and more.", "topic": "http", "fetched_at": "2026-09-20"}
+{"name": "httplib2", "version": "0.32.0", "summary": "A comprehensive HTTP client library.", "topic": "http", "fetched_at": "2026-09-20"}
+{"name": "websockets", "version": "17.1", "summary": "An implementation of the WebSocket Protocol (RFC 6455 & 7692)", "topic": "http", "fetched_at": "2026-09-20"}
+{"name": "paramiko", "version": "5.0.0", "summary": "SSH2 protocol library", "topic": "http", "fetched_at": "2026-09-20"}
+{"name": "Flask", "version": "3.1.3", "summary": "A simple framework for building complex web applications.", "topic": "web", "fetched_at": "2026-09-20"}
+{"name": "Django", "version": "6.1.1", "summary": "A high-level Python web framework that encourages rapid development and clean, pragmatic design.", "topic": "web", "fetched_at": "2026-09-20"}
+{"name": "fastapi", "version": "0.141.1", "summary": "FastAPI framework, high performance, easy to learn, fast to code, ready for production", "topic": "web", "fetched_at": "2026-09-20"}
+{"name": "starlette", "version": "1.6.0", "summary": "The little ASGI library that shines.", "topic": "web", "fetched_at": "2026-09-20"}
+{"name": "bottle", "version": "0.13.4", "summary": "Fast and simple WSGI-framework for small web-applications.", "topic": "web", "fetched_at": "2026-09-20"}
+{"name": "tornado", "version": "6.5.10", "summary": "Tornado is a Python web framework and asynchronous networking library, originally developed at FriendFeed.", "topic": "web", "fetched_at": "2026-09-20"}
+{"name": "pyramid", "version": "2.1", "summary": "The Pyramid Web Framework, a Pylons project", "topic": "web", "fetched_at": "2026-09-20"}
+{"name": "sanic", "version": "25.12.1", "summary": "A web server and web framework that's written to go fast. Build fast. Run fast.", "topic": "web", "fetched_at": "2026-09-20"}
+{"name": "numpy", "version": "2.5.3", "summary": "Fundamental package for array computing in Python", "topic": "data", "fetched_at": "2026-09-20"}
+{"name": "pandas", "version": "3.0.6", "summary": "Powerful data structures for data analysis, time series, and statistics", "topic": "data", "fetched_at": "2026-09-20"}
+{"name": "polars", "version": "1.44.2", "summary": "Blazingly fast DataFrame library", "topic": "data", "fetched_at": "2026-09-20"}
+{"name": "scipy", "version": "1.18.1", "summary": "Fundamental algorithms for scientific computing in Python", "topic": "data", "fetched_at": "2026-09-20"}
+{"name": "dask", "version": "2026.8.0", "summary": "Parallel PyData with Task Scheduling", "topic": "data", "fetched_at": "2026-09-20"}
+{"name": "pyarrow", "version": "25.0.1", "summary": "Python library for Apache Arrow", "topic": "data", "fetched_at": "2026-09-20"}
+{"name": "xarray", "version": "2026.7.0", "summary": "N-D labeled arrays and datasets in Python", "topic": "data", "fetched_at": "2026-09-20"}
+{"name": "scikit-learn", "version": "1.9.1", "summary": "A set of python modules for machine learning and data mining", "topic": "ml", "fetched_at": "2026-09-20"}
+{"name": "torch", "version": "2.14.0", "summary": "Tensors and Dynamic neural networks in Python with strong GPU acceleration", "topic": "ml", "fetched_at": "2026-09-20"}
+{"name": "tensorflow", "version": "2.21.0", "summary": "TensorFlow is an open source machine learning framework for everyone.", "topic": "ml", "fetched_at": "2026-09-20"}
+{"name": "xgboost", "version": "3.4.1", "summary": "XGBoost Python Package", "topic": "ml", "fetched_at": "2026-09-20"}
+{"name": "lightgbm", "version": "4.7.0", "summary": "LightGBM Python-package", "topic": "ml", "fetched_at": "2026-09-20"}
+{"name": "transformers", "version": "5.17.0", "summary": "Transformers: the model-definition framework for state-of-the-art machine learning models in text, vision, audio, and multimodal models, for both inference and training.", "topic": "ml", "fetched_at": "2026-09-20"}
+{"name": "keras", "version": "3.15.1", "summary": "Multi-backend Keras", "topic": "ml", "fetched_at": "2026-09-20"}
+{"name": "matplotlib", "version": "3.11.2", "summary": "Python plotting package", "topic": "plot", "fetched_at": "2026-09-20"}
+{"name": "seaborn", "version": "0.13.2", "summary": "Statistical data visualization", "topic": "plot", "fetched_at": "2026-09-20"}
+{"name": "plotly", "version": "7.1.0", "summary": "An open-source interactive data visualization library for Python", "topic": "plot", "fetched_at": "2026-09-20"}
+{"name": "bokeh", "version": "3.10.0", "summary": "Interactive plots and applications in the browser from Python", "topic": "plot", "fetched_at": "2026-09-20"}
+{"name": "altair", "version": "6.3.0", "summary": "Vega-Altair: A declarative statistical visualization library for Python.", "topic": "plot", "fetched_at": "2026-09-20"}
+{"name": "beautifulsoup4", "version": "4.15.0", "summary": "Screen-scraping library", "topic": "parse", "fetched_at": "2026-09-20"}
+{"name": "lxml", "version": "6.1.3", "summary": "Powerful and Pythonic XML processing library combining libxml2/libxslt with the ElementTree API.", "topic": "parse", "fetched_at": "2026-09-20"}
+{"name": "html5lib", "version": "1.1", "summary": "HTML parser based on the WHATWG HTML specification", "topic": "parse", "fetched_at": "2026-09-20"}
+{"name": "PyYAML", "version": "6.0.3", "summary": "YAML parser and emitter for Python", "topic": "parse", "fetched_at": "2026-09-20"}
+{"name": "jsonschema", "version": "4.26.0", "summary": "An implementation of JSON Schema validation for Python", "topic": "parse", "fetched_at": "2026-09-20"}
+{"name": "orjson", "version": "3.12.0", "summary": "Fast, correct Python JSON library supporting dataclasses, datetimes, and numpy", "topic": "parse", "fetched_at": "2026-09-20"}
+{"name": "ujson", "version": "6.0.0", "summary": "Ultra fast JSON encoder and decoder for Python", "topic": "parse", "fetched_at": "2026-09-20"}
+{"name": "xmltodict", "version": "1.0.4", "summary": "Makes working with XML feel like you are working with JSON", "topic": "parse", "fetched_at": "2026-09-20"}
+{"name": "pytest", "version": "9.1.1", "summary": "pytest: simple powerful testing with Python", "topic": "test", "fetched_at": "2026-09-20"}
+{"name": "hypothesis", "version": "6.168.0", "summary": "The property-based testing library for Python", "topic": "test", "fetched_at": "2026-09-20"}
+{"name": "tox", "version": "4.63.0", "summary": "tox is a generic virtualenv management and test command line tool", "topic": "test", "fetched_at": "2026-09-20"}
+{"name": "coverage", "version": "7.16.1", "summary": "Code coverage measurement for Python", "topic": "test", "fetched_at": "2026-09-20"}
+{"name": "Faker", "version": "40.39.0", "summary": "Faker is a Python package that generates fake data for you.", "topic": "test", "fetched_at": "2026-09-20"}
+{"name": "responses", "version": "0.26.3", "summary": "A utility library for mocking out the `requests` Python library.", "topic": "test", "fetched_at": "2026-09-20"}
+{"name": "pytest-cov", "version": "7.1.0", "summary": "Pytest plugin for measuring coverage.", "topic": "test", "fetched_at": "2026-09-20"}
+{"name": "pydantic", "version": "2.13.5", "summary": "Data validation using Python type hints", "topic": "model", "fetched_at": "2026-09-20"}
+{"name": "attrs", "version": "26.1.0", "summary": "Classes Without Boilerplate", "topic": "model", "fetched_at": "2026-09-20"}
+{"name": "marshmallow", "version": "4.3.1", "summary": "A lightweight library for converting complex datatypes to and from native Python datatypes.", "topic": "model", "fetched_at": "2026-09-20"}
+{"name": "cattrs", "version": "26.2.0", "summary": "Composable complex class support for attrs and dataclasses.", "topic": "model", "fetched_at": "2026-09-20"}
+{"name": "dataclasses-json", "version": "0.6.7", "summary": "Easily serialize dataclasses to and from JSON.", "topic": "model", "fetched_at": "2026-09-20"}
+{"name": "SQLAlchemy", "version": "2.0.54", "summary": "Database Abstraction Library", "topic": "db", "fetched_at": "2026-09-20"}
+{"name": "psycopg", "version": "3.3.6", "summary": "PostgreSQL database adapter for Python", "topic": "db", "fetched_at": "2026-09-20"}
+{"name": "asyncpg", "version": "0.31.0", "summary": "An asyncio PostgreSQL driver", "topic": "db", "fetched_at": "2026-09-20"}
+{"name": "peewee", "version": "4.5.1", "summary": "a little orm", "topic": "db", "fetched_at": "2026-09-20"}
+{"name": "pymongo", "version": "4.18.1", "summary": "PyMongo - the Official MongoDB Python driver", "topic": "db", "fetched_at": "2026-09-20"}
+{"name": "redis", "version": "8.1.0", "summary": "Python client for Redis database and key-value store", "topic": "db", "fetched_at": "2026-09-20"}
+{"name": "alembic", "version": "1.20.0", "summary": "A database migration tool for SQLAlchemy.", "topic": "db", "fetched_at": "2026-09-20"}
+{"name": "click", "version": "8.5.0", "summary": "Composable command line interface toolkit", "topic": "cli", "fetched_at": "2026-09-20"}
+{"name": "typer", "version": "0.27.2", "summary": "Typer, build great CLIs. Easy to code. Based on Python type hints.", "topic": "cli", "fetched_at": "2026-09-20"}
+{"name": "rich", "version": "15.0.0", "summary": "Render rich text, tables, progress bars, syntax highlighting, markdown and more to the terminal", "topic": "cli", "fetched_at": "2026-09-20"}
+{"name": "tqdm", "version": "4.70.1", "summary": "Fast, Extensible Progress Meter", "topic": "cli", "fetched_at": "2026-09-20"}
+{"name": "fire", "version": "0.7.1", "summary": "A library for automatically generating command line interfaces.", "topic": "cli", "fetched_at": "2026-09-20"}
+{"name": "celery", "version": "5.6.3", "summary": "Distributed Task Queue.", "topic": "async", "fetched_at": "2026-09-20"}
+{"name": "rq", "version": "2.12.0", "summary": "RQ is a simple, lightweight, library for creating background jobs, and processing them.", "topic": "async", "fetched_at": "2026-09-20"}
+{"name": "dramatiq", "version": "2.2.1", "summary": "Background Processing for Python 3.", "topic": "async", "fetched_at": "2026-09-20"}
+{"name": "arq", "version": "0.28.0", "summary": "Job queues in python with asyncio and redis", "topic": "async", "fetched_at": "2026-09-20"}
+{"name": "APScheduler", "version": "3.11.3", "summary": "In-process task scheduler with Cron-like capabilities", "topic": "async", "fetched_at": "2026-09-20"}
+{"name": "trio", "version": "0.34.0", "summary": "A friendly Python library for async concurrency and I/O", "topic": "async", "fetched_at": "2026-09-20"}
+{"name": "anyio", "version": "4.15.1", "summary": "High-level concurrency and networking framework on top of asyncio or Trio", "topic": "async", "fetched_at": "2026-09-20"}
+{"name": "pillow", "version": "12.3.0", "summary": "Python Imaging Library (fork)", "topic": "files", "fetched_at": "2026-09-20"}
+{"name": "opencv-python", "version": "5.0.0.93", "summary": "Wrapper package for OpenCV python bindings.", "topic": "files", "fetched_at": "2026-09-20"}
+{"name": "ImageIO", "version": "2.37.4", "summary": "Read and write images and video across all major formats. Supports scientific and volumetric data.", "topic": "files", "fetched_at": "2026-09-20"}
+{"name": "reportlab", "version": "5.0.1", "summary": "The Reportlab Toolkit", "topic": "files", "fetched_at": "2026-09-20"}
+{"name": "python-docx", "version": "1.2.0", "summary": "Create, read, and update Microsoft Word .docx files.", "topic": "files", "fetched_at": "2026-09-20"}
+{"name": "openpyxl", "version": "3.1.5", "summary": "A Python library to read/write Excel 2010 xlsx/xlsm files", "topic": "files", "fetched_at": "2026-09-20"}
+{"name": "pypdf", "version": "6.19.0", "summary": "A pure-python PDF library capable of splitting, merging, cropping, and transforming PDF files", "topic": "files", "fetched_at": "2026-09-20"}
+{"name": "setuptools", "version": "84.0.0", "summary": "Most extensible Python build backend with support for C/C++ extension modules", "topic": "dev", "fetched_at": "2026-09-20"}
+{"name": "poetry", "version": "2.5.1", "summary": "Python dependency management and packaging made easy.", "topic": "dev", "fetched_at": "2026-09-20"}
+{"name": "pip", "version": "26.2.1", "summary": "The PyPA recommended tool for installing Python packages.", "topic": "dev", "fetched_at": "2026-09-20"}
+{"name": "virtualenv", "version": "21.9.0", "summary": "Virtual Python Environment builder", "topic": "dev", "fetched_at": "2026-09-20"}
+{"name": "black", "version": "26.5.1", "summary": "The uncompromising code formatter.", "topic": "dev", "fetched_at": "2026-09-20"}
+{"name": "ruff", "version": "0.16.8", "summary": "An extremely fast Python linter and code formatter, written in Rust.", "topic": "dev", "fetched_at": "2026-09-20"}
+{"name": "mypy", "version": "2.3.1", "summary": "Optional static typing for Python", "topic": "dev", "fetched_at": "2026-09-20"}
+{"name": "flake8", "version": "7.3.0", "summary": "the modular source code checker: pep8 pyflakes and co", "topic": "dev", "fetched_at": "2026-09-20"}
+{"name": "isort", "version": "9.0.1", "summary": "A Python utility / library to sort Python imports.", "topic": "dev", "fetched_at": "2026-09-20"}
+{"name": "pylint", "version": "4.0.8", "summary": "python code static checker", "topic": "dev", "fetched_at": "2026-09-20"}
+{"name": "cryptography", "version": "50.0.1", "summary": "cryptography is a package which provides cryptographic recipes and primitives to Python developers.", "topic": "security", "fetched_at": "2026-09-20"}
+{"name": "PyJWT", "version": "2.14.0", "summary": "JSON Web Token implementation in Python", "topic": "security", "fetched_at": "2026-09-20"}
+{"name": "bcrypt", "version": "5.0.0", "summary": "Modern password hashing for your software and your servers", "topic": "security", "fetched_at": "2026-09-20"}
+{"name": "passlib", "version": "1.7.4", "summary": "comprehensive password hashing framework supporting over 30 schemes", "topic": "security", "fetched_at": "2026-09-20"}
+{"name": "PyNaCl", "version": "1.6.2", "summary": "Python binding to the Networking and Cryptography (NaCl) library", "topic": "security", "fetched_at": "2026-09-20"}
+{"name": "boto3", "version": "1.43.98", "summary": "The AWS SDK for Python (Boto3)", "topic": "cloud", "fetched_at": "2026-09-20"}
+{"name": "google-cloud-storage", "version": "3.14.1", "summary": "Google Cloud Storage API client library", "topic": "cloud", "fetched_at": "2026-09-20"}
+{"name": "azure-storage-blob", "version": "12.30.2", "summary": "Microsoft Azure Blob Storage Client Library for Python", "topic": "cloud", "fetched_at": "2026-09-20"}
+{"name": "kubernetes", "version": "36.0.3", "summary": "Kubernetes python client", "topic": "cloud", "fetched_at": "2026-09-20"}
+{"name": "docker", "version": "7.2.0", "summary": "A Python library for the Docker Engine API.", "topic": "cloud", "fetched_at": "2026-09-20"}
+{"name": "python-dateutil", "version": "2.9.0.post0", "summary": "Extensions to the standard Python datetime module", "topic": "misc", "fetched_at": "2026-09-20"}
+{"name": "pytz", "version": "2026.3.post1", "summary": "World timezone definitions, modern and historical", "topic": "misc", "fetched_at": "2026-09-20"}
+{"name": "arrow", "version": "1.4.0", "summary": "Better dates & times for Python", "topic": "misc", "fetched_at": "2026-09-20"}
+{"name": "pendulum", "version": "3.2.0", "summary": "Python datetimes made easy", "topic": "misc", "fetched_at": "2026-09-20"}
+{"name": "loguru", "version": "0.7.3", "summary": "Python logging made (stupidly) simple", "topic": "misc", "fetched_at": "2026-09-20"}
+{"name": "structlog", "version": "26.1.0", "summary": "Structured Logging for Python", "topic": "misc", "fetched_at": "2026-09-20"}
+{"name": "python-dotenv", "version": "1.2.3", "summary": "Read key-value pairs from a .env file and set them as environment variables", "topic": "misc", "fetched_at": "2026-09-20"}
