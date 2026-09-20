@@ -55,8 +55,8 @@ def main(out: str) -> None:
                 ax.text(n, total + 1, str(total), ha="center", fontsize=9, color=INK)
         ax.set_title(title, fontsize=10, color=INK, loc="left")
         ax.set_ylim(0, 48)
-        ax.set_xlim(0.4, 6.6)
-        ax.set_xticks(range(1, 7))
+        ax.set_xlim(0.4, 5.6)
+        ax.set_xticks(range(1, 6))
         ax.tick_params(labelsize=9, colors=INK)
         for side in ("top", "right"):
             ax.spines[side].set_visible(False)
