@@ -70,16 +70,18 @@ def frontier(out: str) -> None:
                 mew=1.5,
                 ms=13,
             )
+        left = label == "3.5-flash-lite"
         ax.annotate(
             label,
             (per_run, 100 * share),
             textcoords="offset points",
-            xytext=(8, -3),
+            xytext=(-10 if left else 8, -3),
+            ha="right" if left else "left",
             fontsize=8.5,
             color=INK,
         )
     ax.set_xscale("log")
-    ax.set_xlim(0.0005, 0.011)
+    ax.set_xlim(0.00032, 0.011)
     ax.set_ylim(40, 100)
     ax.set_xlabel("dollars per run (log scale)", fontsize=9, color=INK)
     ax.set_ylabel("runs meeting the required actions (%)", fontsize=9, color=INK)
@@ -130,7 +132,7 @@ def thinking(out: str) -> None:
         total = sum(cost.run_cost(t, prices[model]) for t in traces) / n
         written.append(total - hidden)
         unseen.append(hidden)
-    ax.barh(labels, written, color=GREY, label="tokens the model wrote and sent")
+    ax.barh(labels, written, color=GREY, label="input and written tokens")
     ax.barh(
         labels, unseen, left=written, color=RED, label="thinking tokens, never shown"
     )

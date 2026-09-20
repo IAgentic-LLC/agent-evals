@@ -176,7 +176,7 @@ def render_frontier(
         rows.append((label, cost, met, n, low, high))
     front = set(pareto(points))
     lines = [
-        f"{'condition':<19}{'$ per run':>10}{'met':>8}{'share':>7}{'95% interval':>14}"
+        f"{'condition':<19}{'$ per run':>10}{'met':>8}{'met %':>7}{'95% interval':>14}"
         + f"{'frontier':>10}"
     ]
     for label, cost, met, n, low, high in rows:
@@ -211,11 +211,11 @@ def render_thinking(
     conditions: list[tuple[str, str, list[Trace]]], prices: dict[str, Price]
 ) -> str:
     """How much of what is billed the model never showed: per run, the tokens it wrote,
-    the tokens it thought, the thinking share of output, and the cost counting only the
-    written tokens against the cost of everything billed."""
+    the tokens it thought, the thinking share of output, and the cost of the input and
+    the written tokens alone against the cost of everything billed."""
     lines = [
-        f"{'condition':<19}{'written':>9}{'thought':>9}{'share':>7}"
-        + f"{'$ written':>11}{'$ billed':>10}"
+        f"{'condition':<19}{'written':>9}{'thought':>9}{'think %':>9}"
+        + f"{'$ no thinking':>15}{'$ billed':>10}"
     ]
     for label, model, traces in conditions:
         n = len(traces)
@@ -225,7 +225,7 @@ def render_thinking(
         unseen = thought * prices[model][1] / 1_000_000
         lines.append(
             f"{label:<19}{out - thought:>9.0f}{thought:>9.0f}"
-            + f"{f'{100 * thought / out:.0f}%':>7}{billed - unseen:>11.4f}{billed:>10.4f}"
+            + f"{f'{100 * thought / out:.0f}%':>9}{billed - unseen:>15.4f}{billed:>10.4f}"
         )
     return "\n".join(lines) + "\n"
 
