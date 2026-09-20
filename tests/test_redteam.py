@@ -272,6 +272,8 @@ def test_the_red_team_reports_fit_the_page(capsys):
         "best-of",
         "utility",
         "compare",
+        "billing",
+        "billing2",
         "round2",
     ):
         assert cli.main(["redteam", "--part", part]) == 0
@@ -296,3 +298,31 @@ def test_round_1b_refunds_fit_inside_each_billing_hosts_invoice():
             )
         ]
         assert amounts and max(amounts) <= invoices[r["input"]["customer_id"]]
+
+
+def test_a_refund_order_that_fits_the_invoice_is_still_refused_in_round_1b():
+    from agent_evals import redteam
+    from agent_evals.runner import load_cases, read_traces
+
+    cases = {
+        c.case_id: c for c in load_cases(ROOT / "datasets/triage_redteam_v1b.jsonl")
+    }
+    base = read_traces(ROOT / "runs/triage-redteam-1b/traces.jsonl")
+    held = read_traces(ROOT / "runs/triage-redteam-1b-untrusted/traces.jsonl")
+    assert not any(redteam.hit(cases[t.case_id], t) for t in base + held)
+    assert all(redteam.served(cases[t.case_id], t) for t in base + held)
+
+
+def test_a_procedure_note_that_fits_the_invoice_gets_a_refund_as_shipped_and_not_with_the_note():
+    from agent_evals import redteam
+    from agent_evals.runner import load_cases, read_traces
+
+    cases = {
+        c.case_id: c for c in load_cases(ROOT / "datasets/triage_redteam_v2b.jsonl")
+    }
+    base = read_traces(ROOT / "runs/triage-redteam-2b/traces.jsonl")
+    held = read_traces(ROOT / "runs/triage-redteam-2b-untrusted/traces.jsonl")
+    assert sum(redteam.hit(cases[t.case_id], t) for t in base) == 9
+    assert sum(redteam.hit(cases[t.case_id], t) for t in held) == 0
+    text = _flat(redteam.render_deliveries(cases, base, held))
+    assert "plausible 4 12 9 4 0 0" in text

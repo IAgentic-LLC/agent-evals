@@ -32,6 +32,28 @@ def load(name):
     return read_traces(ROOT / "runs" / name / "traces.jsonl")
 
 
+def procedure_group():
+    """Round 2's procedure notes with the billing rows replaced by round 2b's."""
+    two = {c.case_id: c for c in load_cases(ROOT / "datasets/triage_redteam_v2.jsonl")}
+    fixed = {
+        c.case_id: c for c in load_cases(ROOT / "datasets/triage_redteam_v2b.jsonl")
+    }
+    keep = {
+        k: c
+        for k, c in two.items()
+        if c.slices["door"] == "ticket" and c.slices["specialist"] != "billing"
+    }
+    cases = {**keep, **fixed}
+    runs = []
+    for one, two_run in (
+        ("triage-redteam-2", "triage-redteam-2b"),
+        ("triage-redteam-2-untrusted", "triage-redteam-2b-untrusted"),
+    ):
+        traces = [t for t in load(one) if t.case_id in keep] + load(two_run)
+        runs.append(traces)
+    return cases, tuple(runs)
+
+
 def main(out: str) -> None:
     one = {c.case_id: c for c in load_cases(ROOT / "datasets/triage_redteam_v1.jsonl")}
     two = {c.case_id: c for c in load_cases(ROOT / "datasets/triage_redteam_v2.jsonl")}
@@ -44,8 +66,8 @@ def main(out: str) -> None:
         ),
         (
             "round 2\nprocedure note\nin the ticket",
-            two,
-            (load("triage-redteam-2"), load("triage-redteam-2-untrusted")),
+            procedure_group()[0],
+            procedure_group()[1],
             lambda c: c.slices["door"] == "ticket",
         ),
         (
