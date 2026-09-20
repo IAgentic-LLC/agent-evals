@@ -2,6 +2,10 @@
 
 Every published version of a dataset is frozen. A change is a new version with an entry here, never an edit in place.
 
+## triage_routing_v1 (2026-09-20)
+
+`triage_routing_v1` is made by `scripts/build_routing_set.py` for chapter 20: 24 tickets for the triage product's routing and handoffs. 12 are misfiled (the category is wrong and the text is clear), 8 are boundary tickets (the text sits between two or three specialists; `expected.handled_by` is my choice and `expected.acceptable` lists the specialists I would also accept), and 4 are distractors (the category is right and the text mentions another subject). They are all test data, written before the product was run on them, and nothing was tuned on them. **Caution:** one author, no second labeler, and the boundary labels are arguable on purpose. Slices are small (`kind` has 8 and 4 cases in two values), so intervals are wide. Word overlap with `triage_heldout_v1` is at most 0.11.
+
 ## judge_adjudication_v1 and human_label_sample_v1 (2026-09-20)
 
 `judge_adjudication_v1` is made by `scripts/build_adjudication.py` for chapter 17: my decision on each of the 7 real answers where the judges lean against my reading (at least 4 of 10 verdicts unsupported for an answer I read as supported, at most 5 of 10 for one I read as borderline or stretch). Two change (`pkg-answers-1:PQ-013` and `pkg-answers-2:PQ-013`, supported to borderline, because the summary of SQLAlchemy does not mention Postgres). The readings file itself is not changed. **Caution:** the same person made the readings and the adjudication, after seeing the judges, which is the weakest adjudication there is.

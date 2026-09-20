@@ -23,6 +23,7 @@ from agent_evals import (
     judge_report,
     labels,
     reliability,
+    routing,
     tool_calls,
     trajectory,
     world,
@@ -574,6 +575,25 @@ def cmd_judge_report(args) -> int:
     return 0
 
 
+def cmd_routing(args) -> int:
+    cases = {c.case_id: c for c in load_cases(args.dataset)}
+    every = [
+        t
+        for n in reliability.TRIAL_RUNS
+        for t in read_traces(Path("runs") / n / "traces.jsonl")
+    ]
+    five = read_traces(Path("runs") / "triage-reliability-5x" / "traces.jsonl")
+    if args.part == "specialists":
+        print(routing.render_specialists(cases, every), end="")
+    elif args.part == "handoffs":
+        print(routing.render_handoffs(cases, five), end="")
+    elif args.part == "loops":
+        print(routing.render_loops(cases, five), end="")
+    elif args.part == "reasons":
+        print(routing.render_reasons(cases, five, args.tickets), end="")
+    return 0
+
+
 def cmd_reliability(args) -> int:
     part = args.part
     if part == "consistent":
@@ -934,6 +954,14 @@ def main(argv: list[str] | None = None) -> int:
         required=True,
     )
     p_jp.set_defaults(func=cmd_judge_report)
+    p_rt = sub.add_parser("routing", help="routing and handoffs of the triage product")
+    p_rt.add_argument(
+        "--part", required=True, choices=("specialists", "handoffs", "loops", "reasons")
+    )
+    p_rt.add_argument("--dataset", default="datasets/triage_heldout_v1.jsonl")
+    p_rt.add_argument("--tickets", nargs="*", default=["HO-014", "HO-039", "HO-035"])
+    p_rt.set_defaults(func=cmd_routing)
+
     p_rl = sub.add_parser("reliability", help="repeated trials of the same cases")
     p_rl.add_argument(
         "--part",
