@@ -83,6 +83,12 @@ Recorded on the 42 held-out tickets: `runs/triage-heldout-v1-calls` and `-calls-
 
 `StallGuardAdapter` (`triage-live-customer-id-stall-guard`) patches the product's tool loop so that after three empty rounds in a row it stops offering tools and asks for a final answer. Recorded on the 42 held-out tickets, two passes (`runs/triage-heldout-v1-guard`, `-guard-2`, recorded from a clean commit): runs ending in an error fall from 23 of 84 to 5 of 84 and runs taking every required action rise from 56 to 74 of 84. Five runs still ended in an error: login tickets where one useful search reset the streak, and a handoff loop the guard does not watch. The guard was designed after reading these tickets, so the comparison is indicative and not a clean test. The forced answers were not graded for quality.
 
+## Chapter 11: multi-turn and memory
+
+The reorder product's approval workflow is a two-turn conversation: a question, a pause for a person, then a decision that resumes the run from saved state. `Trace.turns` records each turn (what was sent, whether the run paused, the saved state afterward, and how many times the model was called). `src/agent_evals/adapters/reorder.py` plays the turns against Book 2's `build_approval_workflow`, one thread and one SQLite file per run (`reorder-live`, or `reorder-scripted` with no key). `src/agent_evals/mechanics.py` has eight checks that need no model (pauses before acting, resume calls the model zero times, state survives a restart, threads do not mix, and so on) and five workflow variants with one planted fault each; `agent-evals conversation check` runs them and exits 1 if the real workflow fails a check or a planted fault passes all eight. `agent-evals conversation grade --run R [R ...] --dataset D` grades recorded conversations.
+
+`datasets/reorder_conversations_v1.jsonl` has 26 questions labeled from the inventory (built by `scripts/build_reorder_conversations.py`). Two recorded live passes (`runs/reorder-conversations-1`, `-2`, from a clean commit): nothing was logged before a decision (0 of 52) or after a rejection (0 of 11), resume never called the model (0 of 26), 50 of 52 conversations paused correctly, and in 4 of the 15 approved orders the product's own `extract_sku` would order the first SKU named in the question, which for two multi-SKU questions is the well-stocked one. The API and job queue were not run (they need Postgres). `reorder-app` is pinned to `ch35-end` for `extract_sku` only.
+
 ## Run it
 
 ```bash

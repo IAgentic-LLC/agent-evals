@@ -1,0 +1,28 @@
+{
+  "adapter": "reorder-live",
+  "model": null,
+  "dataset": {
+    "path": "datasets/reorder_conversations_v1.jsonl",
+    "sha256": "8b9bf00116d3319b5c85320a9e2c9e1dfc0aae3d954e882846235f7069ec0233",
+    "cases": 26
+  },
+  "trials": 1,
+  "concurrency": 6,
+  "started_at": "2026-09-20T12:43:19+00:00",
+  "wall_seconds": 27.62,
+  "harness": {
+    "commit": "aed9e3cdbeac893bfa80c6fe23da97941d0442b7",
+    "dirty": false
+  },
+  "packages": {
+    "triage-app": {
+      "version": "0.1.0",
+      "requested_revision": "ch35-end",
+      "commit": "fae73727bded59b6b4a950d0480e54f0183dd33f"
+    },
+    "reliable-agents-labs": {
+      "version": "0.1.0",
+      "commit": "aa77047b27b847bf5d5794d81036d93c196cb0d6"
+    }
+  }
+}

@@ -363,7 +363,8 @@ def cmd_conversation_check(args) -> int:
 def cmd_conversation_grade(args) -> int:
     cases = {c.case_id: c for c in load_cases(args.dataset)}
     traces = [t for run in args.run for t in read_traces(Path(run) / "traces.jsonl")]
-    print(conversation.render(" + ".join(args.run), cases, traces), end="")
+    names = " + ".join(Path(run).name for run in args.run)
+    print(conversation.render(names, cases, traces), end="")
     broken = any(conversation.violated_invariants(cases[t.case_id], t) for t in traces)
     return 1 if broken else 0
 
