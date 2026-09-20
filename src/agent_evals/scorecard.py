@@ -42,17 +42,47 @@ def build_scorecard(
     )
 
 
-def _table(rows: list[tuple[str, str, str]]) -> list[str]:
+def _grid(header: tuple[str, ...], rows: list[tuple[str, ...]]) -> list[str]:
     """A markdown table with padded columns, so it also reads well as plain text."""
-    header = ("Measure", "Observed", "95% interval")
     body = [header, *rows]
-    widths = [max(len(r[i]) for r in body) for i in range(3)]
+    widths = [max(len(r[i]) for r in body) for i in range(len(header))]
 
-    def fmt(row: tuple[str, str, str]) -> str:
+    def fmt(row: tuple[str, ...]) -> str:
         return "| " + " | ".join(c.ljust(w) for c, w in zip(row, widths)) + " |"
 
     sep = "|" + "|".join("-" * (w + 2) for w in widths) + "|"
     return [fmt(header), sep, *[fmt(r) for r in rows]]
+
+
+def _table(rows: list[tuple[str, str, str]]) -> list[str]:
+    return _grid(("Measure", "Observed", "95% interval"), rows)
+
+
+def render_by_slice(cases: list[EvalCase], traces: list[Trace], key: str) -> str:
+    """One row per value of a slice key: how the run did on that group of cases."""
+    by_id = {c.case_id: c for c in cases}
+    groups: dict[str, list[Trace]] = {}
+    for t in traces:
+        groups.setdefault(by_id[t.case_id].slices.get(key, "(none)"), []).append(t)
+
+    def cell(k: int, n: int, iv: Interval) -> str:
+        return f"{k}/{n}  {round(100 * iv.low)}-{round(100 * iv.high)}%"
+
+    rows = []
+    for value, group in sorted(groups.items()):
+        card = build_scorecard("", "", cases, group)
+        n = card.observations
+        rows.append(
+            (
+                value,
+                str(n),
+                cell(card.routing_successes, n, card.routing_interval),
+                cell(card.actions_successes, n, card.actions_interval),
+                f"{card.invariant_violations}/{n}",
+            )
+        )
+    header = (f"By {key}", "n", "Routing", "Required actions", "Forbidden")
+    return "\n".join(_grid(header, rows)) + "\n"
 
 
 def render_markdown(sc: Scorecard) -> str:

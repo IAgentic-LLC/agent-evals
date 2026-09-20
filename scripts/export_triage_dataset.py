@@ -46,8 +46,11 @@ def main() -> None:
             provenance=(
                 "Book 3 (Production AI Products), chapter 23, "
                 "triage_app.evaluation.GOLDEN_TICKETS; "
-                "required_actions added in Evaluating AI Agents, chapter 2"
+                "required_actions added in Evaluating AI Agents, chapter 2; "
+                "split added in chapter 4: these are the seed tickets triage-app "
+                "was built against, so they are development data"
             ),
+            split="dev",
         )
         lines.append(case.model_dump_json())
     OUT.parent.mkdir(parents=True, exist_ok=True)

@@ -1,0 +1,220 @@
+{
+  "key": "near_dev",
+  "meaning": "yes when the ticket is at least as similar to a development ticket as the least similar known paraphrase",
+  "embedding_model": "gemini-embedding-001",
+  "threshold": 0.7556,
+  "values": {
+    "HO-001": "no",
+    "HO-002": "no",
+    "HO-003": "yes",
+    "HO-004": "no",
+    "HO-005": "no",
+    "HO-006": "no",
+    "HO-007": "no",
+    "HO-008": "no",
+    "HO-009": "yes",
+    "HO-010": "yes",
+    "HO-011": "no",
+    "HO-012": "yes",
+    "HO-013": "no",
+    "HO-014": "no",
+    "HO-015": "no",
+    "HO-016": "no",
+    "HO-017": "no",
+    "HO-018": "no",
+    "HO-019": "no",
+    "HO-020": "no",
+    "HO-021": "no",
+    "HO-022": "no",
+    "HO-023": "yes",
+    "HO-024": "no",
+    "HO-025": "no",
+    "HO-026": "no",
+    "HO-027": "no",
+    "HO-028": "no",
+    "HO-029": "no",
+    "HO-030": "no",
+    "HO-031": "yes",
+    "HO-032": "yes",
+    "HO-033": "no",
+    "HO-034": "yes",
+    "HO-035": "no",
+    "HO-036": "no",
+    "HO-037": "yes",
+    "HO-038": "yes",
+    "HO-039": "no",
+    "HO-040": "no",
+    "HO-041": "no",
+    "HO-042": "no"
+  },
+  "nearest": {
+    "HO-001": {
+      "development_case": "TCK-1006",
+      "similarity": 0.7456
+    },
+    "HO-002": {
+      "development_case": "TCK-1001",
+      "similarity": 0.6832
+    },
+    "HO-003": {
+      "development_case": "TCK-1001",
+      "similarity": 0.8304
+    },
+    "HO-004": {
+      "development_case": "TCK-1006",
+      "similarity": 0.6769
+    },
+    "HO-005": {
+      "development_case": "TCK-1001",
+      "similarity": 0.67
+    },
+    "HO-006": {
+      "development_case": "TCK-1006",
+      "similarity": 0.5856
+    },
+    "HO-007": {
+      "development_case": "TCK-1006",
+      "similarity": 0.6052
+    },
+    "HO-008": {
+      "development_case": "TCK-1001",
+      "similarity": 0.7315
+    },
+    "HO-009": {
+      "development_case": "TCK-1006",
+      "similarity": 0.8622
+    },
+    "HO-010": {
+      "development_case": "TCK-1001",
+      "similarity": 0.8299
+    },
+    "HO-011": {
+      "development_case": "TCK-1002",
+      "similarity": 0.7232
+    },
+    "HO-012": {
+      "development_case": "TCK-1002",
+      "similarity": 0.7653
+    },
+    "HO-013": {
+      "development_case": "TCK-1002",
+      "similarity": 0.6899
+    },
+    "HO-014": {
+      "development_case": "TCK-1004",
+      "similarity": 0.5756
+    },
+    "HO-015": {
+      "development_case": "TCK-1004",
+      "similarity": 0.6083
+    },
+    "HO-016": {
+      "development_case": "TCK-1002",
+      "similarity": 0.6141
+    },
+    "HO-017": {
+      "development_case": "TCK-1002",
+      "similarity": 0.6388
+    },
+    "HO-018": {
+      "development_case": "TCK-1005",
+      "similarity": 0.5631
+    },
+    "HO-019": {
+      "development_case": "TCK-1002",
+      "similarity": 0.6418
+    },
+    "HO-020": {
+      "development_case": "TCK-1002",
+      "similarity": 0.5933
+    },
+    "HO-021": {
+      "development_case": "TCK-1005",
+      "similarity": 0.6195
+    },
+    "HO-022": {
+      "development_case": "TCK-1006",
+      "similarity": 0.7238
+    },
+    "HO-023": {
+      "development_case": "TCK-1004",
+      "similarity": 0.8429
+    },
+    "HO-024": {
+      "development_case": "TCK-1004",
+      "similarity": 0.6868
+    },
+    "HO-025": {
+      "development_case": "TCK-1004",
+      "similarity": 0.6504
+    },
+    "HO-026": {
+      "development_case": "TCK-1004",
+      "similarity": 0.6742
+    },
+    "HO-027": {
+      "development_case": "TCK-1004",
+      "similarity": 0.6329
+    },
+    "HO-028": {
+      "development_case": "TCK-1004",
+      "similarity": 0.6734
+    },
+    "HO-029": {
+      "development_case": "TCK-1004",
+      "similarity": 0.5964
+    },
+    "HO-030": {
+      "development_case": "TCK-1004",
+      "similarity": 0.7266
+    },
+    "HO-031": {
+      "development_case": "TCK-1003",
+      "similarity": 0.7707
+    },
+    "HO-032": {
+      "development_case": "TCK-1006",
+      "similarity": 0.8222
+    },
+    "HO-033": {
+      "development_case": "TCK-1005",
+      "similarity": 0.6107
+    },
+    "HO-034": {
+      "development_case": "TCK-1004",
+      "similarity": 0.7822
+    },
+    "HO-035": {
+      "development_case": "TCK-1004",
+      "similarity": 0.639
+    },
+    "HO-036": {
+      "development_case": "TCK-1001",
+      "similarity": 0.7547
+    },
+    "HO-037": {
+      "development_case": "TCK-1003",
+      "similarity": 0.8701
+    },
+    "HO-038": {
+      "development_case": "TCK-1004",
+      "similarity": 0.8049
+    },
+    "HO-039": {
+      "development_case": "TCK-1005",
+      "similarity": 0.7217
+    },
+    "HO-040": {
+      "development_case": "TCK-1001",
+      "similarity": 0.7178
+    },
+    "HO-041": {
+      "development_case": "TCK-1005",
+      "similarity": 0.7139
+    },
+    "HO-042": {
+      "development_case": "TCK-1005",
+      "similarity": 0.7514
+    }
+  }
+}

@@ -17,6 +17,10 @@ class EvalCase(BaseModel):
     invariants: dict[str, Any] = Field(default_factory=dict)
     slices: dict[str, str] = Field(default_factory=dict)
     provenance: str = ""
+    # "dev" cases may be used to build and tune the system. "test" cases never are.
+    split: str = ""
+    # A marker that lets training-data filters recognise and exclude this data.
+    canary: str = ""
 
 
 class Trace(BaseModel):

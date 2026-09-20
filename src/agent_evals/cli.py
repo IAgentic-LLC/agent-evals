@@ -2,6 +2,8 @@
 
 import argparse
 import asyncio
+import hashlib
+import json
 import os
 import sys
 import time
@@ -9,6 +11,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from agent_evals import dataset as dataset_mod
 from agent_evals import gate as gate_mod
 from agent_evals.manifest import build_manifest, harness_state, now
 from agent_evals.runner import (
@@ -18,7 +21,7 @@ from agent_evals.runner import (
     run_cases,
     write_traces,
 )
-from agent_evals.scorecard import build_scorecard, render_markdown
+from agent_evals.scorecard import build_scorecard, render_by_slice, render_markdown
 
 ADAPTERS = (
     "triage-live",
@@ -87,10 +90,88 @@ def cmd_run(args) -> int:
     return 0
 
 
+def _dataset_note(run_dir: Path, dataset: str) -> str:
+    """Say so when a run is scored against a different dataset than it ran on."""
+    try:
+        recorded = json.loads((run_dir / "manifest.json").read_text(encoding="utf8"))
+        ran_on = recorded["dataset"]["sha256"]
+    except (OSError, KeyError, ValueError):
+        return ""
+    now_hash = hashlib.sha256(Path(dataset).read_bytes()).hexdigest()
+    if ran_on == now_hash:
+        return ""
+    return (
+        "Note: this run was recorded against a different version of the dataset\n"
+        f"(hash {ran_on[:8]}, now {now_hash[:8]}). Scoring it against the current\n"
+        "file is allowed, and it is not the same test.\n\n"
+    )
+
+
 def cmd_stats(args) -> int:
-    sc = _scorecard_for(Path(args.run), Path(args.dataset).stem, args.dataset)
-    print(render_markdown(sc))
+    run_dir = Path(args.run)
+    sc = _scorecard_for(run_dir, Path(args.dataset).stem, args.dataset)
+    print(_dataset_note(run_dir, args.dataset) + render_markdown(sc), end="")
+    if args.by:
+        cases = load_cases(args.dataset)
+        traces = read_traces(run_dir / "traces.jsonl")
+        if args.derived:
+            derived = json.loads(Path(args.derived).read_text(encoding="utf8"))
+            for case in cases:
+                case.slices[derived["key"]] = derived["values"].get(
+                    case.case_id, "(none)"
+                )
+        for key in args.by:
+            print()
+            print(render_by_slice(cases, traces, key), end="")
     return 0
+
+
+def cmd_dataset_check(args) -> int:
+    if args.env_file:
+        load_dotenv(args.env_file)
+    cases = load_cases(args.dataset)
+    issues = dataset_mod.check_cases(cases)
+    reference = load_cases(args.against) if args.against else None
+    lexical = dataset_mod.nearest_lexical(cases, reference) if reference else None
+    semantic = controls = None
+    if args.embeddings:
+        if reference is None:
+            raise SystemExit("--embeddings needs --against")
+        if not os.environ.get("GEMINI_API_KEY"):
+            raise SystemExit("--embeddings needs GEMINI_API_KEY (use --env-file)")
+        from reliable_agents_labs.models import build_embedding_client
+
+        embed = build_embedding_client().embed
+        pairs = []
+        if args.controls:
+            for line in Path(args.controls).read_text(encoding="utf8").splitlines():
+                if line.strip():
+                    row = json.loads(line)
+                    pairs.append((row["source"], row["text"]))
+
+        async def scores():
+            near = await dataset_mod.nearest_semantic(cases, reference, embed)
+            ctl = await dataset_mod.control_scores(pairs, reference, embed)
+            return near, ctl
+
+        semantic, controls = asyncio.run(scores())
+        if args.write_derived:
+            import yaml
+
+            config = yaml.safe_load(
+                Path("config/models.yaml").read_text(encoding="utf8")
+            )
+            flags = dataset_mod.near_dev_flags(
+                semantic, controls, config["embedding_model"]["model_id"]
+            )
+            dump_json(args.write_derived, flags)
+    print(
+        dataset_mod.render_check(
+            Path(args.dataset).name, cases, issues, lexical, semantic, controls
+        ),
+        end="",
+    )
+    return 1 if any(i.severity == "error" for i in issues) else 0
 
 
 def cmd_gate(args) -> int:
@@ -126,7 +207,28 @@ def main(argv: list[str] | None = None) -> int:
     p_stats = sub.add_parser("stats", help="print the scorecard for a run directory")
     p_stats.add_argument("--run", required=True)
     p_stats.add_argument("--dataset", required=True)
+    p_stats.add_argument(
+        "--by", action="append", help="also print a table per value of this slice key"
+    )
+    p_stats.add_argument(
+        "--derived", help="a derived slice written by `dataset check --write-derived`"
+    )
     p_stats.set_defaults(func=cmd_stats)
+
+    p_dataset = sub.add_parser("dataset", help="check an evaluation dataset")
+    ds_sub = p_dataset.add_subparsers(dest="dataset_command", required=True)
+    p_check = ds_sub.add_parser("check", help="structure, slices and leakage")
+    p_check.add_argument("--dataset", required=True)
+    p_check.add_argument("--against", help="reference set the cases must not resemble")
+    p_check.add_argument("--controls", help="known paraphrases, as a yardstick")
+    p_check.add_argument(
+        "--embeddings", action="store_true", help="add the semantic check"
+    )
+    p_check.add_argument(
+        "--write-derived", help="write the near_dev slice to this JSON file"
+    )
+    p_check.add_argument("--env-file", help="a .env file to load at runtime")
+    p_check.set_defaults(func=cmd_dataset_check)
 
     p_gate = sub.add_parser("gate", help="apply a gate policy; exit 1 if blocked")
     p_gate.add_argument("--run", required=True)

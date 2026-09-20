@@ -1,6 +1,10 @@
 # Same reproducibility contract as reorder-app's and pkgintel-app's own
 # config/models.yaml: model IDs live here, not hardcoded in source.
 
+embedding_model:
+  provider: gemini
+  model_id: gemini-embedding-001
+
 answer_model:
   provider: gemini
   model_id: gemini-3.6-flash
