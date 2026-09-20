@@ -593,6 +593,10 @@ def cmd_reliability(args) -> int:
         print(reliability.render_variance(outs), end="")
     elif part == "errors":
         print(reliability.render_errors(reliability.errors_by_case(runs)), end="")
+    elif part == "error-kinds":
+        print(reliability.render_error_kinds(runs), end="")
+    elif part == "classes":
+        print(reliability.render_classes(outs), end="")
     return 0
 
 
@@ -934,7 +938,16 @@ def main(argv: list[str] | None = None) -> int:
     p_rl.add_argument(
         "--part",
         required=True,
-        choices=("trials", "curve", "split", "variance", "errors", "consistent"),
+        choices=(
+            "trials",
+            "curve",
+            "split",
+            "variance",
+            "errors",
+            "error-kinds",
+            "classes",
+            "consistent",
+        ),
     )
     p_rl.add_argument("--dataset", default="datasets/triage_heldout_v1.jsonl")
     p_rl.set_defaults(func=cmd_reliability)

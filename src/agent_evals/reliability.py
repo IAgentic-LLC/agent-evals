@@ -227,3 +227,45 @@ def render_errors(errs: dict[str, list[bool]]) -> str:
     for c in range(n + 1):
         lines.append(f"{f'{c} of {n}':<30}{counts.get(c, 0):>7}")
     return "\n".join(lines) + "\n"
+
+
+def _kind(outcomes: list[bool]) -> str:
+    if all(outcomes):
+        return "always"
+    if not any(outcomes):
+        return "never"
+    return "sometimes"
+
+
+def render_classes(outs: dict[str, list[bool]], first: int = 3) -> str:
+    """How the first few trials classify each case, against all the trials."""
+    kinds = ("always", "never", "sometimes")
+    n = len(next(iter(outs.values())))
+    table = {a: {b: 0 for b in kinds} for a in kinds}
+    for v in outs.values():
+        table[_kind(v[:first])][_kind(v)] += 1
+    lines = [
+        f"{f'first {first} trials':<16}" + f"{f'all {n} trials':>13}",
+        f"{'':<16}" + "".join(f"{k:>11}" for k in kinds),
+    ]
+    for a in kinds:
+        cells = "".join(f"{table[a][b]:>11}" for b in kinds)
+        lines.append(f"{a:<16}{cells}")
+    return "\n".join(lines) + "\n"
+
+
+def render_error_kinds(traces_by_run: list[list[Trace]]) -> str:
+    """What the runs that ended in an error said, by the name before the colon."""
+    counts: dict[str, int] = {}
+    total = 0
+    for traces in traces_by_run:
+        for t in traces:
+            total += 1
+            if t.error is not None:
+                kind = t.error.split(":")[0]
+                counts[kind] = counts.get(kind, 0) + 1
+    lines = [f"{'error':<28}{'runs':>6}"]
+    for kind, n in sorted(counts.items(), key=lambda kv: -kv[1]):
+        lines.append(f"{kind:<28}{n:>6}")
+    lines.append(f"{'runs in all':<28}{total:>6}")
+    return "\n".join(lines) + "\n"

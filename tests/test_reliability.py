@@ -92,3 +92,82 @@ def test_more_trials_shrink_the_error_only_down_to_the_between_case_floor():
 def test_a_half_and_half_case_looks_consistent_a_quarter_of_the_time_in_three_trials():
     assert reliability.chance_of_looking_consistent(0.5, 3) == pytest.approx(0.25)
     assert reliability.chance_of_looking_consistent(0.5, 8) == pytest.approx(2 / 256)
+
+
+# ---------------------------------------------------------------- recorded runs
+
+
+def _recorded():
+    from pathlib import Path
+
+    from agent_evals.runner import load_cases, read_traces
+
+    root = Path(__file__).resolve().parents[1]
+    cases = {
+        c.case_id: c for c in load_cases(root / "datasets/triage_heldout_v1.jsonl")
+    }
+    runs = [
+        read_traces(root / "runs" / n / "traces.jsonl") for n in reliability.TRIAL_RUNS
+    ]
+    return cases, runs
+
+
+def _flat(text):
+    return " ".join(text.split())
+
+
+def test_the_recorded_runs_are_42_cases_by_8_trials():
+    cases, runs = _recorded()
+    outs = reliability.outcomes(cases, runs)
+    assert len(outs) == 42 and {len(v) for v in outs.values()} == {8}
+
+
+def test_the_first_three_runs_are_chapter_7s_26_25_and_28():
+    cases, runs = _recorded()
+    text = _flat(reliability.render_trials(cases, list(reliability.TRIAL_RUNS), runs))
+    for line in ("v1 26 of 42", "v1-2 25 of 42", "v1-3 28 of 42"):
+        assert line in text
+
+
+def test_pass_at_flattens_and_pass_hat_falls_much_slower_than_independence_says():
+    cases, runs = _recorded()
+    text = _flat(reliability.render_curve(reliability.outcomes(cases, runs)))
+    assert "1 64% 64% 51-77% 64%" in text
+    assert "3 71% 57% 43-70% 27%" in text
+    assert "8 71% 52% 38-67% 3%" in text
+
+
+def test_cases_split_into_22_always_12_never_and_8_sometimes():
+    cases, runs = _recorded()
+    text = _flat(reliability.render_split(reliability.outcomes(cases, runs)))
+    assert "succeeded every time 22 never succeeded 12 sometimes 8" in text
+
+
+def test_most_of_the_spread_is_between_cases_not_between_runs():
+    cases, runs = _recorded()
+    text = _flat(reliability.render_variance(reliability.outcomes(cases, runs)))
+    assert "share of the spread that is between cases: 80%" in text
+
+
+def test_ten_cases_end_in_an_error_every_time_and_the_errors_are_loops():
+    _, runs = _recorded()
+    errs = reliability.render_errors(reliability.errors_by_case(runs))
+    assert "8 of 8 10" in _flat(errs) and "0 of 8 26" in _flat(errs)
+    kinds = _flat(reliability.render_error_kinds(runs))
+    assert "ToolLoopDidNotConverge 85 HandoffLoopDetected 15 runs in all 336" in kinds
+
+
+def test_three_trials_mostly_classify_a_case_the_way_eight_do():
+    cases, runs = _recorded()
+    text = _flat(reliability.render_classes(reliability.outcomes(cases, runs)))
+    assert "always 22 0 1" in text and "never 0 12 0" in text
+    assert "sometimes 0 0 7" in text
+
+
+def test_the_reliability_reports_fit_the_page(capsys):
+    from agent_evals import cli
+
+    for part in ("trials", "curve", "split", "variance", "errors", "classes"):
+        assert cli.main(["reliability", "--part", part]) == 0
+    for line in capsys.readouterr().out.splitlines():
+        assert len(line) <= 78, line

@@ -15,6 +15,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
+from matplotlib.patches import Patch
 
 from agent_evals import compare, reliability
 from agent_evals.runner import load_cases, read_traces
@@ -54,7 +55,7 @@ def curve(out: str) -> None:
     ax.set_ylim(0, 100)
     ax.set_xticks(ks)
     ax.tick_params(labelsize=9, colors=INK)
-    ax.legend(fontsize=8.5, frameon=False, loc="center right")
+    ax.legend(fontsize=8.5, frameon=False, loc="upper right")
     for side in ("top", "right"):
         ax.spines[side].set_visible(False)
     fig.tight_layout()
@@ -83,6 +84,17 @@ def grid(out: str) -> None:
     ax.set_yticks(range(n))
     ax.set_yticklabels([str(i + 1) for i in range(n)])
     ax.set_xticks([])
+    ax.legend(
+        handles=[
+            Patch(color=BLUE, label="met the required actions"),
+            Patch(color="#FECACA", label="did not"),
+        ],
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.13),
+        ncol=2,
+        fontsize=8.5,
+        frameon=False,
+    )
     ax.tick_params(labelsize=9, colors=INK)
     fig.tight_layout()
     fig.savefig(out, facecolor="white")
