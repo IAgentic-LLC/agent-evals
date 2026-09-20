@@ -1,0 +1,15 @@
+# A hard gate on protected invariants beside one quality rule. The hard rule counts
+# traces that break the invariant policy chosen on the command line. The quality
+# threshold is a demonstration value for this chapter, not a recommendation.
+name: protected-invariants
+rules:
+  - id: no-protected-invariant-violations
+    kind: hard
+    metric: protected_invariant_violations
+    op: max
+    value: 0
+  - id: routing-point-estimate
+    kind: quality
+    metric: routing_rate
+    op: min
+    value: 0.7

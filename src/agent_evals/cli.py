@@ -11,7 +11,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from agent_evals import answer_graders, grader_check, world
+from agent_evals import answer_graders, grader_check, invariants, world
 from agent_evals import dataset as dataset_mod
 from agent_evals import gate as gate_mod
 from agent_evals.manifest import build_manifest, harness_state, now
@@ -237,9 +237,49 @@ def cmd_state(args) -> int:
     return 1 if any(found.values()) else 0
 
 
+def _invariant_findings(
+    run: str, dataset: str, policy: str, permissions_path: str | None
+) -> tuple[dict[str, list[str]], set[str], int]:
+    """Rule hits by rule, the traces that broke any rule, and the trace count."""
+    cases = {c.case_id: c for c in load_cases(dataset)}
+    traces = read_traces(Path(run) / "traces.jsonl")
+    permissions = (
+        invariants.load_permissions(permissions_path) if permissions_path else None
+    )
+    found: dict[str, list[str]] = {rule: [] for rule in invariants.RULES}
+    broken: set[str] = set()
+    for t in traces:
+        for rule in invariants.violations(cases[t.case_id], t, policy, permissions):
+            found[rule].append(f"{t.case_id} t{t.trial}")
+            broken.add(f"{t.case_id} t{t.trial}")
+    return found, broken, len(traces)
+
+
+def cmd_invariants(args) -> int:
+    found, broken, total = _invariant_findings(
+        args.run, args.dataset, args.policy, args.permissions
+    )
+    print(f"Protected invariants for {args.run} ({total} traces)")
+    print(f"policy {args.policy}: {invariants.POLICIES[args.policy]}")
+    # A deny-list has one rule. The allow-list rows would always read 0.
+    for rule in invariants.RULES[: 1 if args.policy == "deny-list" else None]:
+        hits = found[rule]
+        shown = ", ".join(hits[:2])
+        more = f" (+{len(hits) - 2} more)" if len(hits) > 2 else ""
+        print(f"  {rule:<30}{len(hits):>3}   {shown}{more}".rstrip())
+    print(f"traces that broke a rule: {len(broken)} of {total}")
+    return 1 if broken else 0
+
+
 def cmd_gate(args) -> int:
     sc = _scorecard_for(Path(args.run), Path(args.dataset).stem, args.dataset)
-    result = gate_mod.evaluate(gate_mod.load_policy(args.policy), sc)
+    extra = None
+    if args.invariants:
+        _, broken, _ = _invariant_findings(
+            args.run, args.dataset, args.invariants, args.permissions
+        )
+        extra = {"protected_invariant_violations": float(len(broken))}
+    result = gate_mod.evaluate(gate_mod.load_policy(args.policy), sc, extra)
     print(gate_mod.render(result))
     return 0 if result.passed else 1
 
@@ -321,10 +361,25 @@ def main(argv: list[str] | None = None) -> int:
     p_state.add_argument("--dataset", required=True)
     p_state.set_defaults(func=cmd_state)
 
+    p_inv = sub.add_parser(
+        "invariants", help="check protected invariants after each run; exit 1 if broken"
+    )
+    p_inv.add_argument("--run", required=True)
+    p_inv.add_argument("--dataset", required=True)
+    p_inv.add_argument("--policy", choices=list(invariants.POLICIES), required=True)
+    p_inv.add_argument("--permissions", help="what each ticket itself asked for")
+    p_inv.set_defaults(func=cmd_invariants)
+
     p_gate = sub.add_parser("gate", help="apply a gate policy; exit 1 if blocked")
     p_gate.add_argument("--run", required=True)
     p_gate.add_argument("--dataset", required=True)
     p_gate.add_argument("--policy", required=True)
+    p_gate.add_argument(
+        "--invariants",
+        choices=list(invariants.POLICIES),
+        help="also count traces that break this invariant policy",
+    )
+    p_gate.add_argument("--permissions", help="what each ticket itself asked for")
     p_gate.set_defaults(func=cmd_gate)
 
     args = parser.parse_args(argv)

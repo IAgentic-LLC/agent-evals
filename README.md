@@ -65,6 +65,12 @@ Each run needs its own state. `_run_once` in `src/agent_evals/adapters/triage.py
 
 On that run 41 of 42 tickets started with leftovers, the leaky score was 31 required-action passes against 25 to 28 on the clean runs (29 when each ticket's own actions are counted), and 5 tickets showed a forbidden refund that an earlier ticket had made. `scripts/plot_leak.py` draws the comparison from the recorded runs. `scripts/sandbox_demos.py` shows a temporary directory, a controlled clock, an in-memory database and, behind `uv run --extra containers ... --container` and a running Docker, a throwaway Postgres container per run. Nothing else in the repo needs Docker.
 
+## Chapter 8: protected invariants
+
+`src/agent_evals/invariants.py` checks rules that must hold in every run under three policies: `deny-list` (only the actions a case lists as forbidden), `required-only` (a case may change the world, by refund, freeze, restart or escalation, only in the ways it requires) and `permitted` (required actions plus what the ticket itself asked for, from `datasets/triage_heldout_v1.permissions.jsonl`, four rows). `agent-evals invariants --run R --dataset D --policy P` prints the counts and exits 1 if any trace breaks a rule. `agent-evals gate ... --invariants P --permissions F` adds the count as a hard metric beside the quality rules in `policies/protected_invariants.yaml`. `scripts/plot_invariants.py` draws the comparison from the recorded runs.
+
+On the 42 held-out tickets the product with the customer ID breaks 0, 14 and 10 tickets under the three policies in the first pass (0, 13, 9 in the second and third), and the product as shipped breaks none. Which of those actions are acceptable is a product decision that is not made here: the permissions file follows what the tickets say and is data, so it can change.
+
 ## Run it
 
 ```bash

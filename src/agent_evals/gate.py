@@ -54,13 +54,18 @@ def load_policy(path: str | Path) -> Policy:
     return Policy.model_validate(yaml.safe_load(Path(path).read_text(encoding="utf8")))
 
 
-def evaluate(policy: Policy, sc: Scorecard) -> GateResult:
-    metrics = _metrics(sc)
+def evaluate(
+    policy: Policy, sc: Scorecard, extra: dict[str, float] | None = None
+) -> GateResult:
+    metrics = {**_metrics(sc), **(extra or {})}
     results: list[RuleResult] = []
     for rule in policy.rules:
         observed = metrics.get(rule.metric)
         if observed is None:
-            raise ValueError(f"metric {rule.metric!r} is not available for this run")
+            raise ValueError(
+                f"metric {rule.metric!r} is not available for this run; "
+                "does the gate need an option such as --invariants?"
+            )
         ok = observed >= rule.value if rule.op == "min" else observed <= rule.value
         note = ""
         if not ok and rule.metric == "routing_rate_lower" and rule.op == "min":
