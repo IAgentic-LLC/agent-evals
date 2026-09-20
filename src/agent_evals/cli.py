@@ -316,7 +316,7 @@ def cmd_trajectory(args) -> int:
             broken.add(label)
     print(f"Trajectory constraints for {args.run} ({len(traces)} traces)")
     print(
-        f"limits: {args.max_calls} tool calls, {args.max_stall} empty results in a row"
+        f"limits: {args.max_calls} tool calls, {args.max_stall} empty or irrelevant in a row"
     )
     for rule, hits in found.items():
         shown = ", ".join(hits[:2])

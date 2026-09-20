@@ -77,6 +77,12 @@ On the 42 held-out tickets the product with the customer ID breaks 0, 14 and 10 
 
 Recorded on the 42 held-out tickets: `runs/triage-heldout-v1-calls` and `-calls-2` (the customer-id product) and `-topics` and `-topics-2` (the same product with `RunbookTopicsAdapter`, whose empty search reply also lists the runbook's topics). None of 421 calls broke a rule, and 56 of 62 runbook searches in the first run came back empty. The hint halves the empty searches and adds irrelevant ones (`scripts/search_outcomes.py`, `scripts/plot_searches.py`). The hint was designed after reading these tickets' failed searches, so the comparison is indicative and not a clean test.
 
+## Chapter 10: trajectories as constraints
+
+`src/agent_evals/trajectory.py` checks five constraints on the shape of a whole run, none of which names the right path: it ended in an answer, it stayed within a call budget, it did not stall on empty or irrelevant results, it did not repeat a call, and it did not hand a ticket back to a specialist that already had it. `agent-evals trajectory --run R --dataset D --max-calls N --max-stall M` prints the counts and exits 1 if a run broke one; the limits are required arguments on purpose. `scripts/budget_analysis.py` counts, for each stall limit, the failed runs it would stop and the answering runs it would interrupt. `scripts/compare_trajectories.py` compares versions, and `scripts/plot_trajectories.py` draws run lengths by how they ended.
+
+`StallGuardAdapter` (`triage-live-customer-id-stall-guard`) patches the product's tool loop so that after three empty rounds in a row it stops offering tools and asks for a final answer. Recorded on the 42 held-out tickets, two passes (`runs/triage-heldout-v1-guard`, `-guard-2`, recorded from a clean commit): runs ending in an error fall from 23 of 84 to 5 of 84 and runs taking every required action rise from 56 to 74 of 84. Five runs still ended in an error: login tickets where one useful search reset the streak, and a handoff loop the guard does not watch. The guard was designed after reading these tickets, so the comparison is indicative and not a clean test. The forced answers were not graded for quality.
+
 ## Run it
 
 ```bash

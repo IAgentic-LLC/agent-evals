@@ -48,6 +48,25 @@ def longest_stall(case: EvalCase, trace: Trace) -> int:
     return best
 
 
+def empty_rounds_in_a_row(trace: Trace) -> int:
+    """The most rounds in a row where every tool result held nothing useful.
+
+    This is the rule the stall guard of chapter 10 applies while a run is still going.
+    """
+    rounds: dict[int, list[dict[str, Any]]] = {}
+    for call in trace.tool_calls:
+        if call["result"] is not None:
+            rounds.setdefault(call["round"], []).append(call)
+    best = run = 0
+    for number in sorted(rounds):
+        if all(tool_calls.is_empty(c) for c in rounds[number]):
+            run += 1
+            best = max(best, run)
+        else:
+            run = 0
+    return best
+
+
 def violations(
     case: EvalCase, trace: Trace, max_calls: int, max_stall: int
 ) -> list[str]:

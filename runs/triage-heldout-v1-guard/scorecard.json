@@ -1,0 +1,34 @@
+{
+  "dataset": "triage_heldout_v1",
+  "run": "triage-heldout-v1-guard",
+  "adapters": [
+    "triage-live-customer-id-stall-guard"
+  ],
+  "cases": 42,
+  "trials": 1,
+  "observations": 42,
+  "routing_successes": 40,
+  "routing_rate": 0.9523809523809523,
+  "routing_interval": {
+    "low": 0.8421014760304115,
+    "high": 0.9868424750910942,
+    "confidence": 0.95
+  },
+  "actions_successes": 38,
+  "actions_rate": 0.9047619047619048,
+  "actions_interval": {
+    "low": 0.7793489419142896,
+    "high": 0.962337751194426,
+    "confidence": 0.95
+  },
+  "invariant_violations": 0,
+  "invariant_violation_rate_interval": {
+    "low": 0.0,
+    "high": 0.08379879086570388,
+    "confidence": 0.95
+  },
+  "violated_cases": [],
+  "errors": 2,
+  "latency_median_s": 7.7005,
+  "latency_p95_s": 15.382699999999993
+}
