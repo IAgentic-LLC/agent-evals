@@ -189,6 +189,104 @@ class RunbookTopicsAdapter(CustomerIdAdapter):
         super().__exit__(*exc_info)
 
 
+STALL_NOTE = (
+    "\n\nThe tools have returned nothing useful several times in a row. Do not "
+    "call another tool. Answer the customer with what you know, say plainly what "
+    "you could not check, and say what the customer should do next."
+)
+
+
+def _nothing_useful(output: str) -> bool:
+    import json
+
+    try:
+        reply = json.loads(output)
+    except ValueError:
+        return False
+    return isinstance(reply, dict) and (
+        "error" in reply or reply.get("result") == "no matching runbook entry"
+    )
+
+
+class StallGuardAdapter(CustomerIdAdapter):
+    """The customer-id product with a stall guard in its tool loop.
+
+    After `max_empty` rounds in a row where every tool result held nothing useful,
+    the loop stops offering tools and asks the model for a final answer, instead of
+    letting it search until the round limit and end in an error. Everything else is
+    the same: the product, the model, the tickets and the round limit.
+    """
+
+    name = "triage-live-customer-id-stall-guard"
+
+    def __init__(self, client=None, max_empty: int = 3) -> None:
+        super().__init__(client)
+        self._max_empty = max_empty
+
+    def __enter__(self):
+        from reliable_agents_labs.agent_loop import ToolLoopDidNotConverge
+        from triage_app import specialists
+
+        super().__enter__()
+        self._loop = specialists.run_tool_loop
+        max_empty = self._max_empty
+
+        async def guarded_loop(
+            question, client, tools, tool_fns, system, max_iterations=5, on_result=None
+        ):
+            history: list[dict] = []
+            empty_rounds = 0
+            for _ in range(max_iterations):
+                stop = empty_rounds >= max_empty
+                result = await client.generate(
+                    system=system + STALL_NOTE if stop else system,
+                    user=question,
+                    tools=None if stop else tools,
+                    history=history,
+                )
+                if on_result is not None:
+                    on_result(result)
+                if not result.tool_calls:
+                    return result.text
+                assistant = [c.raw or _fallback_call(c) for c in result.tool_calls]
+                history.append(
+                    {"role": "assistant", "content": None, "tool_calls": assistant}
+                )
+                outputs = []
+                for call in result.tool_calls:
+                    output = tool_fns[call.name](call.arguments)
+                    outputs.append(output)
+                    history.append(
+                        {"role": "tool", "tool_call_id": call.id, "content": output}
+                    )
+                if all(_nothing_useful(o) for o in outputs):
+                    empty_rounds += 1
+                else:
+                    empty_rounds = 0
+            raise ToolLoopDidNotConverge(
+                f"model was still requesting tools after {max_iterations} iterations"
+            )
+
+        specialists.run_tool_loop = guarded_loop
+        return self
+
+    def __exit__(self, *exc_info) -> None:
+        from triage_app import specialists
+
+        specialists.run_tool_loop = self._loop
+        super().__exit__(*exc_info)
+
+
+def _fallback_call(call) -> dict:
+    import json
+
+    return {
+        "id": call.id,
+        "type": "function",
+        "function": {"name": call.name, "arguments": json.dumps(call.arguments)},
+    }
+
+
 class LeakyCustomerIdAdapter(CustomerIdAdapter):
     """The same product and the same change, run WITHOUT the reset between runs.
 

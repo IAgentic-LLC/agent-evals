@@ -11,7 +11,14 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from agent_evals import answer_graders, grader_check, invariants, tool_calls, world
+from agent_evals import (
+    answer_graders,
+    grader_check,
+    invariants,
+    tool_calls,
+    trajectory,
+    world,
+)
 from agent_evals import dataset as dataset_mod
 from agent_evals import gate as gate_mod
 from agent_evals.manifest import build_manifest, harness_state, now
@@ -29,6 +36,7 @@ ADAPTERS = (
     "triage-live",
     "triage-live-customer-id",
     "triage-live-customer-id-topics",
+    "triage-live-customer-id-stall-guard",
     "triage-live-customer-id-leaky",
     "triage-replay",
     "triage-scripted-wall",
@@ -43,6 +51,8 @@ def _make_adapter(name: str, replay: str | None):
         return triage.LiveAdapter()
     if name == "triage-live-customer-id":
         return triage.CustomerIdAdapter()
+    if name == "triage-live-customer-id-stall-guard":
+        return triage.StallGuardAdapter()
     if name == "triage-live-customer-id-topics":
         return triage.RunbookTopicsAdapter()
     if name == "triage-live-customer-id-leaky":
@@ -287,6 +297,35 @@ def cmd_calls(args) -> int:
     return 1 if broken else 0
 
 
+def cmd_trajectory(args) -> int:
+    cases = {c.case_id: c for c in load_cases(args.dataset)}
+    traces = read_traces(Path(args.run) / "traces.jsonl")
+    if not any(t.tool_calls for t in traces):
+        print(
+            f"{args.run} has no recorded tool calls. It was recorded before they were."
+        )
+        return 2
+    found: dict[str, list[str]] = {rule: [] for rule in trajectory.RULES}
+    broken: set[str] = set()
+    for t in traces:
+        label = f"{t.case_id} t{t.trial}"
+        for rule in trajectory.violations(
+            cases[t.case_id], t, args.max_calls, args.max_stall
+        ):
+            found[rule].append(label)
+            broken.add(label)
+    print(f"Trajectory constraints for {args.run} ({len(traces)} traces)")
+    print(
+        f"limits: {args.max_calls} tool calls, {args.max_stall} empty results in a row"
+    )
+    for rule, hits in found.items():
+        shown = ", ".join(hits[:2])
+        more = f" (+{len(hits) - 2} more)" if len(hits) > 2 else ""
+        print(f"  {rule:<22}{len(hits):>3}   {shown}{more}".rstrip())
+    print(f"traces that broke a constraint: {len(broken)} of {len(traces)}")
+    return 1 if broken else 0
+
+
 def cmd_gate(args) -> int:
     sc = _scorecard_for(Path(args.run), Path(args.dataset).stem, args.dataset)
     extra = None
@@ -392,6 +431,22 @@ def main(argv: list[str] | None = None) -> int:
     p_calls.add_argument("--run", required=True)
     p_calls.add_argument("--dataset", required=True)
     p_calls.set_defaults(func=cmd_calls)
+
+    p_traj = sub.add_parser(
+        "trajectory", help="check the shape of each run; exit 1 if a constraint broke"
+    )
+    p_traj.add_argument("--run", required=True)
+    p_traj.add_argument("--dataset", required=True)
+    p_traj.add_argument(
+        "--max-calls", type=int, required=True, help="tool calls a run may make"
+    )
+    p_traj.add_argument(
+        "--max-stall",
+        type=int,
+        required=True,
+        help="empty or irrelevant results in a row that count as a stall",
+    )
+    p_traj.set_defaults(func=cmd_trajectory)
 
     p_gate = sub.add_parser("gate", help="apply a gate policy; exit 1 if blocked")
     p_gate.add_argument("--run", required=True)
