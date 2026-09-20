@@ -92,24 +92,58 @@ def test_the_models_table_is_pinned_to_the_four_recorded_runs():
         line.split("  ")[0].strip(): _flat(line)
         for line in cost.render_models(cases, conditions, prices).splitlines()[1:]
     }
+    assert rows["3.6-flash"] == "3.6-flash 126 84 1.8k/0.7k 0.0040 0.0060 7.0 14.6"
+    assert rows["2.5-flash"] == "2.5-flash 126 95 0.8k/0.4k 0.0012 0.0016 2.3 6.2"
+    assert rows["3.6 + stall guard"].split()[5] == "111"
+
+
+def test_the_first_attempt_counted_only_the_tokens_the_model_wrote():
+    cases, prices, _ = _recorded()
+    first = [
+        (label, model, read_traces(ROOT / "runs" / run / "traces.jsonl"))
+        for label, model, run in cli.COST_RUNS_FIRST
+    ]
+    rows = {
+        line.split("  ")[0].strip(): _flat(line)
+        for line in cost.render_models(cases, first, prices).splitlines()[1:]
+    }
     assert rows["3.6-flash"] == "3.6-flash 126 84 1.7k/0.1k 0.0019 0.0028 9.0 21.1"
     assert rows["2.5-flash"] == "2.5-flash 126 98 0.8k/0.1k 0.0004 0.0006 2.5 5.9"
-    assert rows["3.6 + stall guard"].split()[5] == "114"
 
 
-def test_the_frontier_holds_the_cheapest_and_the_guarded_run_and_no_other():
+def test_thinking_is_most_of_what_two_of_the_models_bill_and_none_for_the_third():
+    _, prices, conditions = _recorded()
+    rows = {
+        line.split("  ")[0].strip(): _flat(line)
+        for line in cost.render_thinking(conditions, prices).splitlines()[1:]
+    }
+    assert rows["3.6-flash"] == "3.6-flash 145 567 80% 0.0019 0.0040"
+    assert rows["2.5-flash"] == "2.5-flash 82 291 78% 0.0004 0.0012"
+    assert rows["3.5-flash-lite"] == "3.5-flash-lite 131 0 0% 0.0007 0.0007"
+
+
+def test_the_written_only_cost_of_the_metered_run_matches_the_first_attempts_meter():
+    _, prices, conditions = _recorded()
+    lines = cost.render_thinking(conditions, prices).splitlines()[1:]
+    written = {line.split("  ")[0].strip(): float(line.split()[-2]) for line in lines}
+    assert written["3.6-flash"] == 0.0019
+    assert written["2.5-flash"] == 0.0004
+
+
+def test_the_frontier_drops_only_the_default_model():
     cases, prices, conditions = _recorded()
     lines = cost.render_frontier(cases, conditions, prices).splitlines()[1:]
     on = {line.split("  ")[0].strip() for line in lines if line.endswith("yes")}
-    assert on == {"2.5-flash", "3.6 + stall guard"}
+    assert on == {"3.5-flash-lite", "2.5-flash", "3.6 + stall guard"}
 
 
-def test_more_than_a_quarter_of_the_default_models_spend_went_to_tool_loops():
+def test_three_in_ten_dollars_of_the_default_models_spend_went_to_runs_that_looped():
     cases, prices, conditions = _recorded()
     _, model, traces = conditions[0]
     table = _flat(cost.render_spend(cases, traces, prices[model]))
-    assert "met 84 0.0017 61%" in table
-    assert "tool loop 27 0.0024 27%" in table
+    assert "met 84 0.0040 66%" in table
+    assert "tool loop 29 0.0035 20%" in table
+    assert "handoff loop 7 0.0069 10%" in table
 
 
 def test_the_spend_shares_add_to_one_hundred_percent_within_rounding():
@@ -131,10 +165,26 @@ def test_the_paired_table_pins_the_counts_and_the_intervals():
         ]
     }
     assert rows["3.6 + stall guard"] == (
-        "3.6 + stall guard 13 0 29 <0.001 +23.8 (+12.7 to +35.7)"
+        "3.6 + stall guard 14 2 26 0.004 +21.4 (+10.3 to +33.3)"
     )
-    assert rows["2.5-flash"] == "2.5-flash 13 6 23 0.167 +11.1 (-4.0 to +26.2)"
+    assert rows["2.5-flash"] == "2.5-flash 12 7 23 0.359 +8.7 (-6.3 to +23.0)"
     assert rows["3.5-flash-lite"].startswith("3.5-flash-lite 8 6 28 0.791")
+
+
+def test_the_same_condition_run_twice_is_never_told_apart_from_itself():
+    cases, _, conditions = _recorded()
+    pairs = [
+        (label, read_traces(ROOT / "runs" / first / "traces.jsonl"), traces)
+        for (label, _, first), (_, _, traces) in zip(
+            cli.COST_RUNS_FIRST, conditions, strict=True
+        )
+    ]
+    text = cost.render_repeat(cases, pairs)
+    rows = {line.split("  ")[0].strip(): _flat(line) for line in text.splitlines()[1:]}
+    assert rows["3.6-flash"] == "3.6-flash 1 3 38 0.625 +0.0 (-4.8 to +6.3)"
+    assert rows["2.5-flash"] == "2.5-flash 4 7 31 0.549 -2.4 (-8.7 to +4.0)"
+    for line in text.splitlines()[1:]:
+        assert float(line.split()[-6]) > 0.05
 
 
 def test_a_cheaper_model_that_is_not_shown_worse_is_not_shown_better_either():
@@ -160,7 +210,8 @@ def test_the_plan_prices_two_runs_of_every_ticket_the_power_plan_asked_for():
 def test_every_cost_part_runs_from_the_command_line(capsys):
     import sys
 
-    for part in ("models", "frontier", "spend", "latency", "plan", "paired"):
+    parts = ("models", "frontier", "spend", "latency", "plan", "paired")
+    for part in (*parts, "thinking", "repeat"):
         argv = ["agent-evals", "cost", "--part", part]
         old, sys.argv = sys.argv, argv
         try:

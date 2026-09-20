@@ -205,6 +205,29 @@ def render_plan(
     return "\n".join(lines) + "\n"
 
 
+def render_thinking(
+    conditions: list[tuple[str, str, list[Trace]]], prices: dict[str, Price]
+) -> str:
+    """How much of what is billed the model never showed: per run, the tokens it wrote,
+    the tokens it thought, the thinking share of output, and the cost counting only the
+    written tokens against the cost of everything billed."""
+    lines = [
+        f"{'condition':<19}{'written':>9}{'thought':>9}{'share':>7}"
+        + f"{'$ written':>11}{'$ billed':>10}"
+    ]
+    for label, model, traces in conditions:
+        n = len(traces)
+        thought = sum(t.usage.get("thinking_tokens", 0) for t in traces) / n
+        out = sum(t.usage["output_tokens"] for t in traces) / n
+        billed = sum(run_cost(t, prices[model]) for t in traces) / n
+        unseen = thought * prices[model][1] / 1_000_000
+        lines.append(
+            f"{label:<19}{out - thought:>9.0f}{thought:>9.0f}"
+            + f"{f'{100 * thought / out:.0f}%':>7}{billed - unseen:>11.4f}{billed:>10.4f}"
+        )
+    return "\n".join(lines) + "\n"
+
+
 def _met_by_ticket(cases: dict[str, EvalCase], traces: list[Trace]) -> dict[str, int]:
     out: dict[str, int] = {}
     for t in traces:
@@ -245,6 +268,18 @@ def render_paired(
             + f"{'<0.001' if p < 0.001 else f'{p:.3f}':>7}{shown:>26}"
         )
     return "\n".join(lines) + "\n"
+
+
+def render_repeat(
+    cases: dict[str, EvalCase], pairs: list[tuple[str, list[Trace], list[Trace]]]
+) -> str:
+    """The same condition run twice, compared as if it were two versions. Anything this
+    finds is noise, because nothing changed. Each pair is (label, first, second)."""
+    rows = [
+        render_paired(cases, first, [(label, second)], "first run").splitlines()
+        for label, first, second in pairs
+    ]
+    return "\n".join([rows[0][0]] + [r[1] for r in rows]) + "\n"
 
 
 def summary_row(cases: dict[str, EvalCase], traces: list[Trace], price: Price) -> Any:

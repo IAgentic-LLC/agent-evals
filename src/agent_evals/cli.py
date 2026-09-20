@@ -610,6 +610,13 @@ def cmd_judge_report(args) -> int:
 
 
 COST_RUNS = (
+    ("3.6-flash", "gemini-3.6-flash", "triage-metered-3-6"),
+    ("3.5-flash-lite", "gemini-3.5-flash-lite", "triage-metered-3-5-lite"),
+    ("2.5-flash", "gemini-2.5-flash", "triage-metered-2-5"),
+    ("3.6 + stall guard", "gemini-3.6-flash", "triage-metered-3-6-guard"),
+)
+# The first attempt used the product's own client, which leaves thinking tokens out.
+COST_RUNS_FIRST = (
     ("3.6-flash", "gemini-3.6-flash", "triage-cost-3-6"),
     ("3.5-flash-lite", "gemini-3.5-flash-lite", "triage-cost-3-5-lite"),
     ("2.5-flash", "gemini-2.5-flash", "triage-cost-2-5"),
@@ -622,7 +629,9 @@ def cmd_cost(args) -> int:
     prices = cost.load_prices(args.prices)
     conditions = [
         (label, model, read_traces(Path("runs") / run / "traces.jsonl"))
-        for label, model, run in COST_RUNS
+        for label, model, run in (
+            COST_RUNS_FIRST if args.attempt == "first" else COST_RUNS
+        )
     ]
     picked = next(c for c in conditions if c[0] == args.condition)
     if args.part == "models":
@@ -635,6 +644,15 @@ def cmd_cost(args) -> int:
         print(cost.render_latency(cases, picked[2]), end="")
     elif args.part == "plan":
         print(cost.render_plan(conditions, prices), end="")
+    elif args.part == "thinking":
+        print(cost.render_thinking(conditions, prices), end="")
+    elif args.part == "repeat":
+        first = [
+            (label, read_traces(Path("runs") / run / "traces.jsonl"))
+            for label, _, run in COST_RUNS_FIRST
+        ]
+        pairs = [(c[0], f[1], c[2]) for c, f in zip(conditions, first, strict=True)]
+        print(cost.render_repeat(cases, pairs), end="")
     elif args.part == "paired":
         others = [(c[0], c[2]) for c in conditions if c[0] != args.condition]
         print(cost.render_paired(cases, picked[2], others, picked[0]), end="")
@@ -1091,9 +1109,19 @@ def main(argv: list[str] | None = None) -> int:
     p_co.add_argument(
         "--part",
         required=True,
-        choices=("models", "frontier", "spend", "latency", "plan", "paired"),
+        choices=(
+            "models",
+            "frontier",
+            "spend",
+            "latency",
+            "plan",
+            "paired",
+            "thinking",
+            "repeat",
+        ),
     )
     p_co.add_argument("--condition", default="3.6-flash")
+    p_co.add_argument("--attempt", choices=("metered", "first"), default="metered")
     p_co.add_argument("--dataset", default="datasets/triage_heldout_v1.jsonl")
     p_co.add_argument("--prices", default="config/prices.yaml")
     p_co.set_defaults(func=cmd_cost)

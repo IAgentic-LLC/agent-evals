@@ -1,10 +1,13 @@
-"""Plot the two data figures of chapter 22 from the recorded runs.
+"""Plot the data figures of chapter 22 from the recorded runs.
 
 `frontier`: cost per run against the share of runs that met the required actions.
 `latency`: how long runs took, as the share of runs finished by a given time.
+`thinking`: what a run costs, split into the tokens the model wrote and the ones it
+thought and did not show.
 
 Usage: uv run --with matplotlib python scripts/plot_cost.py frontier OUT.png
        uv run --with matplotlib python scripts/plot_cost.py latency OUT.png
+       uv run --with matplotlib python scripts/plot_cost.py thinking OUT.png
 """
 
 import sys
@@ -57,9 +60,18 @@ def frontier(out: str) -> None:
         ax.plot([per_run], [100 * met / n], "o", color=COLORS[label], ms=7)
     front = set(cost.pareto(points))
     for label, per_run, share in points:
-        star = "  (frontier)" if label in front else ""
+        if label in front:
+            ax.plot(
+                [per_run],
+                [100 * share],
+                "o",
+                mfc="none",
+                mec=INK,
+                mew=1.5,
+                ms=13,
+            )
         ax.annotate(
-            label + star,
+            label,
             (per_run, 100 * share),
             textcoords="offset points",
             xytext=(8, -3),
@@ -67,13 +79,13 @@ def frontier(out: str) -> None:
             color=INK,
         )
     ax.set_xscale("log")
-    ax.set_xlim(0.0003, 0.0038)
+    ax.set_xlim(0.0005, 0.011)
     ax.set_ylim(40, 100)
     ax.set_xlabel("dollars per run (log scale)", fontsize=9, color=INK)
     ax.set_ylabel("runs meeting the required actions (%)", fontsize=9, color=INK)
-    ax.set_xticks([0.0004, 0.0007, 0.0019])
+    ax.set_xticks([0.0007, 0.0012, 0.004])
     ax.xaxis.set_minor_locator(NullLocator())
-    ax.set_xticklabels(["$0.0004", "$0.0007", "$0.0019"])
+    ax.set_xticklabels(["$0.0007", "$0.0012", "$0.0040"])
     ax.tick_params(labelsize=9, colors=INK)
     for side in ("top", "right"):
         ax.spines[side].set_visible(False)
@@ -106,5 +118,38 @@ def latency(out: str) -> None:
     print("wrote", out)
 
 
+def thinking(out: str) -> None:
+    _, prices, conditions = _load()
+    fig, ax = plt.subplots(figsize=(5.5, 3.0), dpi=200)
+    labels = [c[0] for c in conditions][::-1]
+    written, unseen = [], []
+    for label, model, traces in conditions[::-1]:
+        n = len(traces)
+        thought = sum(t.usage["thinking_tokens"] for t in traces) / n
+        hidden = thought * prices[model][1] / 1_000_000
+        total = sum(cost.run_cost(t, prices[model]) for t in traces) / n
+        written.append(total - hidden)
+        unseen.append(hidden)
+    ax.barh(labels, written, color=GREY, label="tokens the model wrote and sent")
+    ax.barh(
+        labels, unseen, left=written, color=RED, label="thinking tokens, never shown"
+    )
+    for i, (w, u) in enumerate(zip(written, unseen, strict=True)):
+        ax.text(
+            w + u + 0.00008, i, f"${w + u:.4f}", va="center", fontsize=8.5, color=INK
+        )
+    ax.set_xlim(0, 0.0056)
+    ax.set_xlabel("dollars per run", fontsize=9, color=INK)
+    ax.tick_params(labelsize=9, colors=INK)
+    ax.legend(loc="center right", fontsize=8.5, frameon=False)
+    for side in ("top", "right"):
+        ax.spines[side].set_visible(False)
+    fig.tight_layout()
+    fig.savefig(out, facecolor="white")
+    print("wrote", out)
+
+
 if __name__ == "__main__":
-    {"frontier": frontier, "latency": latency}[sys.argv[1]](sys.argv[2])
+    {"frontier": frontier, "latency": latency, "thinking": thinking}[sys.argv[1]](
+        sys.argv[2]
+    )
