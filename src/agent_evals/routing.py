@@ -43,7 +43,7 @@ def targets(trace: Trace) -> list[str]:
 def render_specialists(cases: dict[str, EvalCase], traces: list[Trace]) -> str:
     """One row per specialist a ticket should end with: what happened to its runs."""
     lines = [
-        f"{'should end with':<16}{'tickets':>8}{'runs':>6}{'right':>7}"
+        f"{'belongs to':<16}{'tickets':>8}{'runs':>6}{'right':>7}"
         + f"{'wrong':>7}{'error':>7}{'always right':>14}{'95% interval':>13}"
     ]
     for name in SPECIALISTS:
@@ -184,9 +184,9 @@ def render_tickets(cases: dict[str, EvalCase], traces: list[Trace], kind: str) -
             if not t.error:
                 ends.append(t.handled_by or "none")
             elif t.error.startswith("HandoffLoop"):
-                ends.append("loop")
+                ends.append("handoff-loop")
             else:
-                ends.append("stall")
+                ends.append("tool-loop")
         lines.append(
             f"{case_id:<8}{case.input['category']:<11}{case.expected['handled_by']:<11}"
             + ", ".join(ends)

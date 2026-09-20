@@ -80,8 +80,8 @@ def test_the_routing_set_by_ticket_counts_looping_tickets():
 def test_the_boundary_tickets_that_loop_are_the_ones_two_specialists_disown():
     cases, runs = _routing_set()
     text = _flat(routing.render_tickets(cases, runs, "boundary"))
-    assert "RT-016 technical technical loop, loop, loop" in text
-    assert "RT-017 security billing loop, loop, loop" in text
+    assert "RT-016 technical technical handoff-loop, handoff-loop, handoff-loop" in text
+    assert "RT-017 security billing handoff-loop, handoff-loop, handoff-loop" in text
     assert "RT-014 security security security, security, security" in text
 
 
@@ -109,3 +109,20 @@ def test_every_tool_loop_in_the_routing_set_is_on_a_ticket_that_belongs_to_techn
     text = _flat(routing.render_owners(cases, runs))
     assert "billing 21 16 0 5" in text and "security 27 21 0 6" in text
     assert "technical 24 4 17 3" in text
+
+
+def test_the_path_check_flags_exactly_the_runs_that_ended_in_a_handoff_loop():
+    from agent_evals import trajectory
+
+    cases, runs = _routing_set()
+    flagged = {
+        (t.case_id, t.trial)
+        for t in runs
+        if "handoff_returned" in trajectory.violations(cases[t.case_id], t, 3, 3)
+    }
+    looped = {
+        (t.case_id, t.trial)
+        for t in runs
+        if t.error and t.error.startswith("HandoffLoop")
+    }
+    assert len(flagged) == 14 and flagged == looped
