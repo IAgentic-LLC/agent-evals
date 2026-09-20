@@ -4,6 +4,8 @@ Four ways to produce a trace for the same case:
   LiveAdapter        the real model (needs a GEMINI_API_KEY in the environment)
   ReplayAdapter      traces recorded from an earlier live run, so anyone can reproduce
                      the scores without a key
+  CustomerIdAdapter  the real model after one change: the specialist is told the
+                     ticket's customer id, which the product never passed on
   ScriptedWallAdapter    a scripted model against the real topology, where each
                      specialist only has its own tools
   RegressedAdapter   the same scripted model after the technical specialist has been
@@ -70,10 +72,11 @@ def _script_for(case: EvalCase) -> list[ModelResult]:
 async def _run_once(case: EvalCase, trial: int, adapter: str, client) -> Trace:
     ACTIONS_TAKEN.clear()
     started = time.perf_counter()
-    handled_by, error = None, None
+    handled_by, error, answer = None, None, ""
     try:
         resolution = await route_ticket(_ticket(case), client=client)
         handled_by = resolution.handled_by
+        answer = resolution.answer
     except Exception as exc:  # noqa: BLE001 - a failed run is a result, not a crash of the harness
         error = f"{type(exc).__name__}: {exc}"
     return Trace(
@@ -81,6 +84,7 @@ async def _run_once(case: EvalCase, trial: int, adapter: str, client) -> Trace:
         trial=trial,
         adapter=adapter,
         handled_by=handled_by,
+        answer=answer,
         actions_taken=[dict(a) for a in ACTIONS_TAKEN],
         error=error,
         latency_s=round(time.perf_counter() - started, 3),
@@ -92,6 +96,34 @@ class LiveAdapter:
 
     async def run(self, case: EvalCase, trial: int) -> Trace:
         return await _run_once(case, trial, self.name, client=None)
+
+
+class CustomerIdAdapter:
+    """The live model with one change: the specialist's question starts with the
+    customer id. `triage_app` builds that question from the subject and body only,
+    so without this the billing specialist has to ask the customer for an id the
+    ticket already carries.
+    """
+
+    name = "triage-live-customer-id"
+
+    def __init__(self, client=None) -> None:
+        self._client = client
+
+    async def run(self, case: EvalCase, trial: int) -> Trace:
+        from triage_app import specialists
+
+        original = specialists._question_for
+
+        def with_customer_id(ticket, context_note):
+            header = f"Customer ID: {ticket.customer_id}\n\n"
+            return header + original(ticket, context_note)
+
+        specialists._question_for = with_customer_id
+        try:
+            return await _run_once(case, trial, self.name, self._client)
+        finally:
+            specialists._question_for = original
 
 
 class ScriptedWallAdapter:

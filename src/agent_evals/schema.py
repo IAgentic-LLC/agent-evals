@@ -24,6 +24,7 @@ class Trace(BaseModel):
     trial: int = 1
     adapter: str
     handled_by: str | None = None
+    answer: str = ""
     actions_taken: list[dict[str, Any]] = Field(default_factory=list)
     error: str | None = None
     latency_s: float | None = None
@@ -34,7 +35,12 @@ class Grade(BaseModel):
     case_id: str
     trial: int
     routing_correct: bool
+    required_actions_missing: list[str]
     forbidden_actions_taken: list[str]
+
+    @property
+    def required_actions_met(self) -> bool:
+        return not self.required_actions_missing
 
 
 class Interval(BaseModel):
@@ -53,6 +59,9 @@ class Scorecard(BaseModel):
     routing_successes: int
     routing_rate: float
     routing_interval: Interval
+    actions_successes: int
+    actions_rate: float
+    actions_interval: Interval
     invariant_violations: int
     invariant_violation_rate_interval: Interval
     violated_cases: list[str]

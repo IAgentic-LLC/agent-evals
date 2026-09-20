@@ -6,6 +6,7 @@ Dataset `triage_book3_six`: 6 cases, 6 observations
 | Measure                 | Observed        | 95% interval              |
 |-------------------------|-----------------|---------------------------|
 | Routing correct         | 4/6 (66.7%)     | 30.0% to 90.3%            |
+| Required actions taken  | 0/6 (0.0%)      | 0.0% to 39.0%             |
 | Forbidden actions taken | 0/6             | upper bound 39.0% of runs |
 | Errors                  | 2               |                           |
 | Latency median / p95    | 0.00 s / 0.00 s |                           |

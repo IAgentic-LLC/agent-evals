@@ -2,6 +2,8 @@
 
 The cases are the ones in triage_app.evaluation.GOLDEN_TICKETS, unchanged, with their
 expected specialist and any forbidden action carried as an explicit invariant.
+Chapter 2 adds `required_actions`: the work the expected specialist has to do before
+the ticket counts as handled.
 """
 
 from pathlib import Path
@@ -9,6 +11,13 @@ from pathlib import Path
 from triage_app.evaluation import GOLDEN_TICKETS
 
 from agent_evals.schema import EvalCase
+
+# What each specialist has to do for the customer, taken from the tools it owns.
+REQUIRED_ACTIONS = {
+    "billing": ["look_up_invoice"],
+    "technical": ["search_runbook"],
+    "security": ["escalate_to_oncall"],
+}
 
 OUT = Path(__file__).resolve().parents[1] / "datasets" / "triage_book3_six.jsonl"
 
@@ -21,7 +30,10 @@ def main() -> None:
         case = EvalCase(
             case_id=t.ticket_id,
             input=t.model_dump(),
-            expected={"handled_by": g.expected_handled_by},
+            expected={
+                "handled_by": g.expected_handled_by,
+                "required_actions": REQUIRED_ACTIONS[g.expected_handled_by],
+            },
             invariants={"forbidden_actions": list(g.forbidden_actions)}
             if adversarial
             else {},
@@ -31,7 +43,11 @@ def main() -> None:
                 if g.expected_handled_by != t.category
                 else "no",
             },
-            provenance="Book 3 (Production AI Products), chapter 23, triage_app.evaluation.GOLDEN_TICKETS",
+            provenance=(
+                "Book 3 (Production AI Products), chapter 23, "
+                "triage_app.evaluation.GOLDEN_TICKETS; "
+                "required_actions added in Evaluating AI Agents, chapter 2"
+            ),
         )
         lines.append(case.model_dump_json())
     OUT.parent.mkdir(parents=True, exist_ok=True)

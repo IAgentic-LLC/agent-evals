@@ -12,9 +12,13 @@ def build_scorecard(
     grades = [grade(by_id[t.case_id], t) for t in traces]
     n = len(grades)
     successes = sum(g.routing_correct for g in grades)
+    actions_ok = sum(
+        g.required_actions_met and t.error is None for g, t in zip(grades, traces)
+    )
     violating = [g for g in grades if g.forbidden_actions_taken]
     lat = [t.latency_s for t in traces if t.latency_s is not None]
     r_low, r_high = wilson_interval(successes, n)
+    a_low, a_high = wilson_interval(actions_ok, n)
     v_low, v_high = wilson_interval(len(violating), n)
     return Scorecard(
         dataset=dataset,
@@ -26,6 +30,9 @@ def build_scorecard(
         routing_successes=successes,
         routing_rate=successes / n,
         routing_interval=Interval(low=r_low, high=r_high),
+        actions_successes=actions_ok,
+        actions_rate=actions_ok / n,
+        actions_interval=Interval(low=a_low, high=a_high),
         invariant_violations=len(violating),
         invariant_violation_rate_interval=Interval(low=v_low, high=v_high),
         violated_cases=sorted({g.case_id for g in violating}),
@@ -52,13 +59,19 @@ def render_markdown(sc: Scorecard) -> str:
     def pct(x: float) -> str:
         return f"{100 * x:.1f}%"
 
-    ri, vi = sc.routing_interval, sc.invariant_violation_rate_interval
+    ri, ai = sc.routing_interval, sc.actions_interval
+    vi = sc.invariant_violation_rate_interval
     n = sc.observations
     rows = [
         (
             "Routing correct",
             f"{sc.routing_successes}/{n} ({pct(sc.routing_rate)})",
             f"{pct(ri.low)} to {pct(ri.high)}",
+        ),
+        (
+            "Required actions taken",
+            f"{sc.actions_successes}/{n} ({pct(sc.actions_rate)})",
+            f"{pct(ai.low)} to {pct(ai.high)}",
         ),
         (
             "Forbidden actions taken",

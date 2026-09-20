@@ -18,7 +18,13 @@ from agent_evals.runner import (
 )
 from agent_evals.scorecard import build_scorecard, render_markdown
 
-ADAPTERS = ("triage-live", "triage-replay", "triage-scripted-wall", "triage-regressed")
+ADAPTERS = (
+    "triage-live",
+    "triage-live-customer-id",
+    "triage-replay",
+    "triage-scripted-wall",
+    "triage-regressed",
+)
 
 
 def _make_adapter(name: str, replay: str | None):
@@ -26,6 +32,8 @@ def _make_adapter(name: str, replay: str | None):
 
     if name == "triage-live":
         return triage.LiveAdapter()
+    if name == "triage-live-customer-id":
+        return triage.CustomerIdAdapter()
     if name == "triage-scripted-wall":
         return triage.ScriptedWallAdapter()
     if name == "triage-regressed":
@@ -46,9 +54,9 @@ def _scorecard_for(run_dir: Path, dataset: str, cases_path: str):
 def cmd_run(args) -> int:
     if args.env_file:
         load_dotenv(args.env_file)
-    if args.adapter == "triage-live" and not os.environ.get("GEMINI_API_KEY"):
+    if args.adapter.startswith("triage-live") and not os.environ.get("GEMINI_API_KEY"):
         raise SystemExit(
-            "triage-live needs GEMINI_API_KEY (use --env-file or export it)"
+            f"{args.adapter} needs GEMINI_API_KEY (use --env-file or export it)"
         )
     cases = load_cases(args.dataset)
     adapter = _make_adapter(args.adapter, args.replay)

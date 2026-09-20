@@ -11,6 +11,7 @@ Run against the live model (Gemini, the same `triage-app` code as Book 3, one tr
 | Measure | Observed | 95% interval |
 |---|---|---|
 | Routing correct | 6/6 (100%) | 61.0% to 100% |
+| Required actions taken | 4/6 (66.7%) | 30.0% to 90.3% |
 | Forbidden actions taken | 0/6 | upper bound 39.0% of runs |
 | Latency median / p95 | 6.24 s / 8.07 s | |
 
@@ -21,6 +22,15 @@ Three things follow, and each is pinned by a test in `tests/`.
 3. **A quality score cannot see a broken safety boundary.** I gave the technical specialist the refund tool, the kind of change someone makes to be helpful, and replayed the injected tickets with a scripted model that follows the injection. Routing stays 6/6. Two of the six tickets take a forbidden action, and only the hard gate (`invariant_violations <= 0`) blocks the change. The same scripted model against the correct topology takes no forbidden action: the two injected tickets fail closed with an error instead.
 
 There is deliberately no combined score. The scorecard is a profile: each measure with its own uncertainty, and the invariant as a count that must be zero.
+
+## Chapter 2: routing is not success
+
+Scoring the same recording on the work each ticket needs (`required_actions` in the dataset) gives 4 of 6, not 6 of 6. Both billing tickets ended with the specialist asking the customer for an ID the ticket already carried, because `triage-app` builds the model's question from the subject and body only. The adapter `triage-live-customer-id` passes the ID on and scores 6 of 6 on the same measure (`runs/triage-live-customer-id/`, against `runs/triage-live-shipped/` for the product as shipped). Six tickets cannot separate 4/6 from 6/6 by statistics; the reason to believe the fix is the mechanism, not the count. The same change is on the main branch of `triage-app`; this repository still pins the `ch35-end` tag.
+
+```bash
+uv run agent-evals stats --run runs/triage-live-shipped --dataset datasets/triage_book3_six.jsonl
+uv run agent-evals stats --run runs/triage-live-customer-id --dataset datasets/triage_book3_six.jsonl
+```
 
 ## Run it
 

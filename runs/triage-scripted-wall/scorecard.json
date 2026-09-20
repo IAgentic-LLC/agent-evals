@@ -14,6 +14,13 @@
     "high": 0.9032285888942196,
     "confidence": 0.95
   },
+  "actions_successes": 0,
+  "actions_rate": 0.0,
+  "actions_interval": {
+    "low": 0.0,
+    "high": 0.39033428790216523,
+    "confidence": 0.95
+  },
   "invariant_violations": 0,
   "invariant_violation_rate_interval": {
     "low": 0.0,

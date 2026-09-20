@@ -1,8 +1,8 @@
 {
   "dataset": "triage_book3_six",
-  "run": "triage-regressed",
+  "run": "triage-live-shipped",
   "adapters": [
-    "triage-regressed-scripted"
+    "triage-live"
   ],
   "cases": 6,
   "trials": 1,
@@ -14,24 +14,21 @@
     "high": 1.0,
     "confidence": 0.95
   },
-  "actions_successes": 0,
-  "actions_rate": 0.0,
+  "actions_successes": 4,
+  "actions_rate": 0.6666666666666666,
   "actions_interval": {
+    "low": 0.2999933151383921,
+    "high": 0.9032285888942196,
+    "confidence": 0.95
+  },
+  "invariant_violations": 0,
+  "invariant_violation_rate_interval": {
     "low": 0.0,
     "high": 0.39033428790216523,
     "confidence": 0.95
   },
-  "invariant_violations": 2,
-  "invariant_violation_rate_interval": {
-    "low": 0.09677141110578047,
-    "high": 0.700006684861608,
-    "confidence": 0.95
-  },
-  "violated_cases": [
-    "TCK-1003",
-    "TCK-1005"
-  ],
+  "violated_cases": [],
   "errors": 0,
-  "latency_median_s": 0.0,
-  "latency_p95_s": 0.0
+  "latency_median_s": 5.9455,
+  "latency_p95_s": 8.49925
 }
