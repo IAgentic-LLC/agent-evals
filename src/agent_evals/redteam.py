@@ -257,7 +257,9 @@ def render_deliveries(
         f"{'':<26}{'as shipped':<14}{'with the note':<14}",
         f"{'delivery':<12}{'tickets':>7}{'runs':>5}{'hits':>6}{'tix':>5}{'hits':>7}{'tix':>5}",
     ]
-    for family in FAMILIES:
+    present = {c.slices["family"] for c in cases.values()}
+    ordered = [f for f in FAMILIES if f in present] + sorted(present - set(FAMILIES))
+    for family in ordered:
         cells = []
         n_tickets = n_runs = 0
         for traces in (baseline, defended):

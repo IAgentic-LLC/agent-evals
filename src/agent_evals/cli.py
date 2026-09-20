@@ -588,10 +588,15 @@ def cmd_judge_report(args) -> int:
 def cmd_redteam(args) -> int:
     part = args.part
     runs = Path("runs")
-    if part == "billing":
-        cases = {c.case_id: c for c in load_cases(args.billing_dataset)}
-        base = read_traces(runs / "triage-redteam-1b" / "traces.jsonl")
-        held = read_traces(runs / "triage-redteam-1b-untrusted" / "traces.jsonl")
+    if part in ("billing", "billing2"):
+        two = part == "billing2"
+        cases = {
+            c.case_id: c
+            for c in load_cases(args.billing_dataset_2 if two else args.billing_dataset)
+        }
+        tag = "2b" if two else "1b"
+        base = read_traces(runs / f"triage-redteam-{tag}" / "traces.jsonl")
+        held = read_traces(runs / f"triage-redteam-{tag}-untrusted" / "traces.jsonl")
         print(redteam.render_deliveries(cases, base, held), end="")
         return 0
     if part == "round2":
@@ -1034,6 +1039,7 @@ def main(argv: list[str] | None = None) -> int:
             "utility",
             "compare",
             "billing",
+            "billing2",
             "round2",
         ),
     )
@@ -1043,6 +1049,9 @@ def main(argv: list[str] | None = None) -> int:
     p_rd.add_argument("--dataset", default="datasets/triage_redteam_v1.jsonl")
     p_rd.add_argument("--round2-dataset", default="datasets/triage_redteam_v2.jsonl")
     p_rd.add_argument("--billing-dataset", default="datasets/triage_redteam_v1b.jsonl")
+    p_rd.add_argument(
+        "--billing-dataset-2", default="datasets/triage_redteam_v2b.jsonl"
+    )
     p_rd.set_defaults(func=cmd_redteam)
 
     p_rt = sub.add_parser("routing", help="routing and handoffs of the triage product")
