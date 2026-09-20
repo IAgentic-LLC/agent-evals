@@ -147,6 +147,7 @@ def test_most_of_the_spread_is_between_cases_not_between_runs():
     cases, runs = _recorded()
     text = _flat(reliability.render_variance(reliability.outcomes(cases, runs)))
     assert "share of the spread that is between cases: 80%" in text
+    assert "the same 336 runs as 336 different cases: 2.6" in text
 
 
 def test_ten_cases_end_in_an_error_every_time_and_the_errors_are_loops():

@@ -202,6 +202,9 @@ def render_variance(outs: dict[str, list[bool]]) -> str:
             for t in (1, 3, 8, 1000)
         )
         lines.append(f"{cases:<8}{cells}")
+    runs = len(outs) * trials
+    same = standard_error(var_b, var_w, runs, 1)
+    lines.append(f"the same {runs} runs as {runs} different cases: {100 * same:.1f}")
     lines.append(f"(estimated from {len(outs)} cases with {trials} trials each)")
     return "\n".join(lines) + "\n"
 
