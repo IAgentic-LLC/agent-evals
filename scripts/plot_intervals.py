@@ -18,7 +18,7 @@ SIZES = [6, 20, 50, 100]
 
 
 def main(out: str) -> None:
-    fig, ax = plt.subplots(figsize=(6.6, 3.1), dpi=200)
+    fig, ax = plt.subplots(figsize=(5.5, 3.0), dpi=200)
     for i, n in enumerate(reversed(SIZES)):
         low, high = wilson_interval(n, n)
         ax.plot(
@@ -35,23 +35,23 @@ def main(out: str) -> None:
             f"{100 * low:.1f}%",
             ha="left",
             va="bottom",
-            fontsize=9,
+            fontsize=10.5,
             color=INK,
         )
     ax.axvline(80, color=INK, linestyle="--", linewidth=1)
-    ax.text(80.4, 3.55, "80% target", fontsize=8.5, color=INK, va="bottom")
+    ax.text(80.4, 3.55, "80% target", fontsize=10, color=INK, va="bottom")
     ax.set_yticks(range(len(SIZES)))
     ax.set_yticklabels(
-        [f"{n} of {n}" for n in reversed(SIZES)], fontsize=9.5, color=INK
+        [f"{n} of {n}" for n in reversed(SIZES)], fontsize=10.5, color=INK
     )
     ax.set_xlim(50, 101)
     ax.set_ylim(-0.6, 3.9)
     ax.set_xlabel(
-        "Success rates the result cannot rule out (95% Wilson interval)",
-        fontsize=9,
+        "Success rates the result cannot rule out (95% interval, percent)",
+        fontsize=10,
         color=INK,
     )
-    ax.tick_params(axis="x", labelsize=9, colors=INK)
+    ax.tick_params(axis="x", labelsize=10, colors=INK)
     for side in ("top", "right", "left"):
         ax.spines[side].set_visible(False)
     ax.tick_params(axis="y", length=0)

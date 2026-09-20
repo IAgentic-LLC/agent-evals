@@ -35,48 +35,60 @@ def build_scorecard(
     )
 
 
+def _table(rows: list[tuple[str, str, str]]) -> list[str]:
+    """A markdown table with padded columns, so it also reads well as plain text."""
+    header = ("Measure", "Observed", "95% interval")
+    body = [header, *rows]
+    widths = [max(len(r[i]) for r in body) for i in range(3)]
+
+    def fmt(row: tuple[str, str, str]) -> str:
+        return "| " + " | ".join(c.ljust(w) for c, w in zip(row, widths)) + " |"
+
+    sep = "|" + "|".join("-" * (w + 2) for w in widths) + "|"
+    return [fmt(header), sep, *[fmt(r) for r in rows]]
+
+
 def render_markdown(sc: Scorecard) -> str:
     def pct(x: float) -> str:
         return f"{100 * x:.1f}%"
 
     ri, vi = sc.routing_interval, sc.invariant_violation_rate_interval
+    n = sc.observations
+    rows = [
+        (
+            "Routing correct",
+            f"{sc.routing_successes}/{n} ({pct(sc.routing_rate)})",
+            f"{pct(ri.low)} to {pct(ri.high)}",
+        ),
+        (
+            "Forbidden actions taken",
+            f"{sc.invariant_violations}/{n}",
+            f"upper bound {pct(vi.high)} of runs",
+        ),
+        ("Errors", str(sc.errors), ""),
+    ]
+    if sc.latency_median_s is not None:
+        rows.append(
+            (
+                "Latency median / p95",
+                f"{sc.latency_median_s:.2f} s / {sc.latency_p95_s:.2f} s",
+                "",
+            )
+        )
     lines = [
         f"# Scorecard: {sc.run}",
         "",
-        (
-            f"Dataset `{sc.dataset}`, {sc.cases} cases, {sc.observations} "
-            f"observations ({sc.trials} trial(s) each), adapter(s): "
-            f"{', '.join(sc.adapters)}."
-        ),
+        f"Dataset `{sc.dataset}`: {sc.cases} cases, {n} observations",
+        f"({sc.trials} trial(s) each). Adapter: {', '.join(sc.adapters)}.",
         "",
-        "| Measure | Observed | 95% interval |",
-        "|---|---|---|",
-        (
-            f"| Routing correct | {sc.routing_successes}/{sc.observations} "
-            f"({pct(sc.routing_rate)}) | {pct(ri.low)} to {pct(ri.high)} |"
-        ),
-        (
-            f"| Forbidden actions taken (invariant) | {sc.invariant_violations}/"
-            f"{sc.observations} | upper bound {pct(vi.high)} of runs |"
-        ),
-        f"| Errors | {sc.errors} | |",
+        *_table(rows),
     ]
-    if sc.latency_median_s is not None:
-        lines.append(
-            f"| Latency median / p95 | {sc.latency_median_s:.2f} s / "
-            f"{sc.latency_p95_s:.2f} s | |"
-        )
     if sc.violated_cases:
-        lines += [
-            "",
-            f"Cases that violated an invariant: {', '.join(sc.violated_cases)}",
-        ]
+        lines += ["", f"Invariant violated in: {', '.join(sc.violated_cases)}"]
     lines += [
         "",
-        (
-            "There is no combined score on purpose. Each measure is reported with "
-            "its own uncertainty, and the invariant is a count that must be zero, "
-            "not an average."
-        ),
+        "There is no combined score on purpose. Each measure carries its own",
+        "uncertainty, and the invariant is a count that must be zero, not an",
+        "average.",
     ]
     return "\n".join(lines) + "\n"
