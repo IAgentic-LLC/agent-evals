@@ -53,4 +53,13 @@ def main(names: list[str]) -> int:
             cell = "-"
         wrong = wrong or (not aimed and other > 0)
         print(f"{mode:<19}{aimed or '(none)':<18}{cell:>10}{other:>13}")
+    # A fault no check is aimed at: a claim with no name and no number in it. Reported,
+    # and not part of the exit status, because it is a known blind spot.
+    traces = asyncio.run(_run("adds_claim", cases, names))
+    seen = sum(
+        any(grounding.check(by_id[t.case_id], t, names)[f] for f in grounding.FLAGS)
+        for t in traces
+    )
+    print()
+    print(f"adds an unsupported claim: flagged in {seen} of {len(traces)} answers")
     return 1 if wrong else 0

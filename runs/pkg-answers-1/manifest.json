@@ -1,0 +1,36 @@
+{
+  "adapter": "pkg-live",
+  "model": {
+    "provider": "gemini",
+    "model_id": "gemini-3.6-flash"
+  },
+  "dataset": {
+    "path": "datasets/pkg_answers_v1.jsonl",
+    "sha256": "d7c726ccedccd8ff34e989409bfe8fa6386c932437e0edec84fd30972d52d37a",
+    "cases": 77
+  },
+  "trials": 1,
+  "concurrency": 6,
+  "started_at": "2026-09-20T14:04:30+00:00",
+  "wall_seconds": 41.61,
+  "harness": {
+    "commit": "f40d81adfb7c10183aa4c1a74652f77213d89526",
+    "dirty": false
+  },
+  "packages": {
+    "triage-app": {
+      "version": "0.1.0",
+      "requested_revision": "ch35-end",
+      "commit": "fae73727bded59b6b4a950d0480e54f0183dd33f"
+    },
+    "reliable-agents-labs": {
+      "version": "0.1.0",
+      "commit": "aa77047b27b847bf5d5794d81036d93c196cb0d6"
+    },
+    "pkgintel-app": {
+      "version": "0.1.0",
+      "requested_revision": "ch33-end",
+      "commit": "15887bc78ff4318c2741c0e9cb326d4312a44e96"
+    }
+  }
+}

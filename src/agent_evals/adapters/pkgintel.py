@@ -118,8 +118,8 @@ def _retrieved(user: str) -> list[tuple[str, str]]:
 class ScriptedRagClient:
     """A model that answers from the retrieved text, and can be told to misbehave in
     exactly one way. `mode` is one of `faithful`, `cites_unretrieved`,
-    `names_outside`, `states_version`, `cites_nothing`, `ignores_context` or
-    `invalid_json`. `names` lists every package in the index, so the script can pick
+    `names_outside`, `states_version`, `cites_nothing`, `ignores_context`,
+    `adds_claim` or `invalid_json`. `names` lists every package in the index, so the script can pick
     one that was not retrieved."""
 
     def __init__(self, mode: str = "faithful", names: list[str] | None = None) -> None:
@@ -140,6 +140,8 @@ class ScriptedRagClient:
             cited = [outside]
         elif self.mode == "names_outside":
             text += f" You may also like {outside}."
+        elif self.mode == "adds_claim":
+            text += " It is the most widely used choice among professional teams."
         elif self.mode == "states_version":
             text += " The latest version is 9.9.9."
         elif self.mode == "cites_nothing":
