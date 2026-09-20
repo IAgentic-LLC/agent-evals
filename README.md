@@ -53,6 +53,12 @@ The first run on the test set (`runs/triage-heldout-v1`, with the chapter 2 fix)
 
 Version 4 makes 2 errors in 117 dev answers and 2 in 59 test answers. On the product as shipped it flags about half of the answers as asking for a customer ID the ticket already carried, and 0 with the Chapter 2 fix. The fix also changed what the product does: across the same 42 tickets the shipped product only searches the runbook and escalates, while with the customer ID it looks up 13 invoices, issues 4 refunds and freezes 9 accounts (`runs/triage-heldout-v1-shipped*` against `runs/triage-heldout-v1*`).
 
+## Chapter 6: state beats prose
+
+`src/agent_evals/world.py` rebuilds what a run changed (refunds, frozen accounts, restarts, escalations) from the ledger of side effects, and checks four rules about it: a run acts only on the ticket's own customer, a refund never exceeds the invoice on file, at most one refund, and a run that fails leaves the world unchanged. `agent-evals state --run R --dataset D` prints the rule counts. `src/agent_evals/action_claims.py` has three ways to ask whether an action happened (a naive prose check, a careful prose check in English, Spanish and French, and the state), and `scripts/prose_vs_state.py` compares them over the 176 recorded answers.
+
+The prose graders disagree with the state a lot (a naive refund check is right 8 times in 32), the state cannot be misled by wording, and across 48 errored runs one had already restarted a service and left no answer (`runs/triage-heldout-v1`, HO-042).
+
 ## Run it
 
 ```bash

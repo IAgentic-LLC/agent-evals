@@ -11,7 +11,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from agent_evals import answer_graders, grader_check
+from agent_evals import answer_graders, grader_check, world
 from agent_evals import dataset as dataset_mod
 from agent_evals import gate as gate_mod
 from agent_evals.manifest import build_manifest, harness_state, now
@@ -217,6 +217,21 @@ def cmd_grade(args) -> int:
     return 0
 
 
+def cmd_state(args) -> int:
+    from triage_app.tools import _INVOICES
+
+    cases = {c.case_id: c for c in load_cases(args.dataset)}
+    traces = read_traces(Path(args.run) / "traces.jsonl")
+    found: dict[str, list[str]] = {rule: [] for rule in world.RULES}
+    for t in traces:
+        for rule in world.state_violations(cases[t.case_id], t, _INVOICES):
+            found[rule].append(f"{t.case_id} t{t.trial}")
+    print(f"State rules for {args.run} ({len(traces)} traces)")
+    for rule, hits in found.items():
+        print(f"  {rule:<30}{len(hits):>3}   {', '.join(hits)}")
+    return 1 if any(found.values()) else 0
+
+
 def cmd_gate(args) -> int:
     sc = _scorecard_for(Path(args.run), Path(args.dataset).stem, args.dataset)
     result = gate_mod.evaluate(gate_mod.load_policy(args.policy), sc)
@@ -295,6 +310,11 @@ def main(argv: list[str] | None = None) -> int:
     p_grade.add_argument("--dataset", required=True)
     p_grade.add_argument("--grader", required=True, help="for example name:v4")
     p_grade.set_defaults(func=cmd_grade)
+
+    p_state = sub.add_parser("state", help="check rules about the world after each run")
+    p_state.add_argument("--run", required=True)
+    p_state.add_argument("--dataset", required=True)
+    p_state.set_defaults(func=cmd_state)
 
     p_gate = sub.add_parser("gate", help="apply a gate policy; exit 1 if blocked")
     p_gate.add_argument("--run", required=True)
