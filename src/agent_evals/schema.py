@@ -43,6 +43,11 @@ class Trace(BaseModel):
     # what was sent, whether the run paused, the state after it, and how many times
     # the model was called during that turn. Empty for single-shot runs.
     turns: list[dict[str, Any]] = Field(default_factory=list)
+    # For retrieval products: what was retrieved for the question, best first, each with
+    # its rank, name, summary and score, and the names the answer says it used. Empty
+    # for runs recorded before chapter 13.
+    retrieved: list[dict[str, Any]] = Field(default_factory=list)
+    cited: list[str] = Field(default_factory=list)
 
 
 class Grade(BaseModel):

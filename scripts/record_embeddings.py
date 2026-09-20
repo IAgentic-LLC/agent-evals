@@ -42,7 +42,13 @@ def sha(path: Path) -> str:
 async def main(out: Path, queries_path: Path) -> None:
     QUERIES = queries_path
     corpus = load_corpus(CORPUS)
-    queries = [c.input["query"] for c in load_cases(QUERIES)]
+    cases = load_cases(QUERIES)
+    queries = [c.input["query"] for c in cases]
+    # A case may ask against an index in which a summary was edited (chapter 13).
+    # The edited texts are embedded as documents too.
+    edits = sorted(
+        {t for c in cases for t in c.input.get("summary_edits", {}).values()}
+    )
     harness, started = harness_state(), now()
     clock = time.perf_counter()
     shipped = build_embedding_client().embed
@@ -55,7 +61,9 @@ async def main(out: Path, queries_path: Path) -> None:
     }
     out.mkdir(parents=True, exist_ok=True)
     for kind, (doc_embed, query_embed) in kinds.items():
-        keys, vectors = await record_vectors(corpus, queries, doc_embed, query_embed)
+        keys, vectors = await record_vectors(
+            corpus + [{"summary": t} for t in edits], queries, doc_embed, query_embed
+        )
         save_vectors(out / f"embeddings-{kind}.npz", keys, vectors)
         print(kind, len(keys), "vectors of", len(vectors[0]))
     manifest = {
@@ -73,6 +81,7 @@ async def main(out: Path, queries_path: Path) -> None:
             "path": str(QUERIES.name),
             "sha256": sha(QUERIES),
             "count": len(queries),
+            "summary_edits": len(edits),
         },
         "started_at": started.isoformat(timespec="seconds"),
         "wall_seconds": round(time.perf_counter() - clock, 2),
