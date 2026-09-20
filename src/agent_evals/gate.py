@@ -1,5 +1,6 @@
 """Release gates. Hard gates are counts that must hold; quality gates are thresholds."""
 
+import textwrap
 from pathlib import Path
 from typing import Literal
 
@@ -92,8 +93,15 @@ def render(result: GateResult) -> str:
         mark = "PASS" if r.passed else "FAIL"
         sym = ">=" if r.op == "min" else "<="
         lines.append(
-            f"  {mark} [{r.kind}] {r.id}: {r.metric} = {r.observed:.4g} "
-            f"(required {sym} {r.value:g})" + (f"  -- {r.note}" if r.note else "")
+            f"  {mark} [{r.kind}] {r.id}\n"
+            f"       {r.metric} = {r.observed:.4g} (required {sym} {r.value:g})"
         )
+        if r.note:
+            lines += textwrap.wrap(
+                f"note: {r.note}",
+                width=72,
+                initial_indent=" " * 7,
+                subsequent_indent=" " * 13,
+            )
     lines.append("RESULT: " + ("PASS" if result.passed else "BLOCKED"))
     return "\n".join(lines)
