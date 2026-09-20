@@ -311,3 +311,59 @@ def test_the_report_commands_fit_the_page_and_exit_0(capsys):
     )
     for line in capsys.readouterr().out.splitlines():
         assert len(line) <= 78, line
+
+
+def test_a_question_answered_in_both_runs_can_sit_in_both_halves_so_unseen_drops_twins():
+    items = judge.load_items(ITEMS)
+    dev = {i["question"] for i in items if i["split"] == "dev"}
+    twins = [
+        i
+        for i in items
+        if i["group"] == "real" and i["split"] == "test" and i["question"] in dev
+    ]
+    assert len(twins) == 17
+    resplit = judge_report.resplit(items, "unseen")
+    unseen = [i for i in resplit if i["split"] == "unseen"]
+    assert len(unseen) == 38 and len({i["question"] for i in unseen}) == 15
+    assert not {i["question"] for i in unseen} & dev
+
+
+def test_on_questions_no_dev_item_shares_version_2_flags_no_supported_answer():
+    items = judge.load_items(ITEMS)
+    text = judge_report.render_compare(
+        items,
+        judge_report.load_rows([ROOT / "runs/judge-v1"]),
+        judge_report.load_rows([ROOT / "runs/judge-v2-test"]),
+        ["judge-v1", "judge-v2-test"],
+        "unseen",
+    )
+    _has(
+        text,
+        "with praise added 10 of 10 10 of 10",
+        "with fact added 4 of 4 4 of 4",
+        "with capability added 4 of 4 4 of 4",
+        "planted originals, clean 5 of 18 0 of 18",
+        "real, my reading: supported 9 of 46 0 of 46",
+        "real, my reading: borderline 12 of 12 4 of 12",
+    )
+    _has(
+        judge_report.render_retest(items, _rows_of("judge-v2-test"), "unseen"),
+        "38 of 38",
+    )
+    _has(judge_report.render_retest(items, _rows_of("judge-v1"), "unseen"), "37 of 38")
+
+
+def test_version_2_passes_two_borderline_questions_and_flags_the_comparison():
+    by = {}
+    for r in _rows_of("judge-v2-test"):
+        if (
+            "PQ-043" in r["item_id"]
+            or "PQ-053" in r["item_id"]
+            or "PQ-059" in r["item_id"]
+        ):
+            by.setdefault(r["item_id"].split(":")[1], set()).add(r["verdict"])
+    assert by == {
+        "PQ-043": {"unsupported"},
+        "PQ-053": {"supported"},
+        "PQ-059": {"supported"},
+    }

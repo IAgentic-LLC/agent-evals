@@ -24,6 +24,22 @@ def _keep(item, split):
     return split is None or item["split"] == split
 
 
+def resplit(items, split):
+    """For the split `unseen`, keep only test items whose question no dev item shares.
+
+    A question was answered in two runs, so the same question can be in both halves.
+    A prompt tuned on the dev half has then already seen the test item's twin.
+    """
+    if split != "unseen":
+        return items
+    seen = {i["question"] for i in items if i["split"] == "dev"}
+    out = []
+    for item in items:
+        fresh = item["split"] == "test" and item["question"] not in seen
+        out.append(dict(item, split="unseen" if fresh else "other"))
+    return out
+
+
 def _cell(k: int, n: int) -> str:
     if n == 0:
         return "-"
@@ -34,6 +50,7 @@ def _cell(k: int, n: int) -> str:
 def render_planted(items, rows, split: str | None = None) -> str:
     """How often the judge said `unsupported` on each kind of planted fault, and on the
     clean originals of those answers. Every verdict counts, both passes."""
+    items = resplit(items, split)
     by_item = _by_item(items)
     faulty: dict[str, Counter] = defaultdict(Counter)
     clean = Counter()
@@ -60,6 +77,7 @@ def render_planted(items, rows, split: str | None = None) -> str:
 
 def render_real(items, rows, split: str | None = None) -> str:
     """The judge's verdicts on the real answers, by my reading of each."""
+    items = resplit(items, split)
     by_item = _by_item(items)
     table: dict[str, Counter] = defaultdict(Counter)
     for r in rows:
@@ -78,6 +96,7 @@ def render_real(items, rows, split: str | None = None) -> str:
 
 def render_retest(items, rows, split: str | None = None) -> str:
     """Do two passes over the same item give the same verdict?"""
+    items = resplit(items, split)
     by_item = _by_item(items)
     verdicts: dict[str, dict[int, str | None]] = defaultdict(dict)
     for r in rows:
@@ -117,6 +136,7 @@ def render_cost(
 def disagreements(items, rows, split: str | None = None) -> list[tuple[dict, str]]:
     """Real answers I read as supported that the judge called unsupported in every pass,
     with the first claim it marked unsupported."""
+    items = resplit(items, split)
     by_item = _by_item(items)
     said: dict[str, list[dict]] = defaultdict(list)
     for r in rows:
@@ -135,6 +155,7 @@ def disagreements(items, rows, split: str | None = None) -> list[tuple[dict, str
 
 def _tally(items, rows, split):
     """For each kind of item, how many verdicts said `unsupported`, and how many there were."""
+    items = resplit(items, split)
     by_item = _by_item(items)
     counts: dict[str, Counter] = defaultdict(Counter)
     for r in rows:

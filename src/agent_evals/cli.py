@@ -766,7 +766,7 @@ def main(argv: list[str] | None = None) -> int:
     p_jp = ju_sub.add_parser("report", help="read recorded verdicts")
     p_jp.add_argument("--run", nargs="+", required=True)
     p_jp.add_argument("--items", required=True)
-    p_jp.add_argument("--split", choices=("dev", "test"))
+    p_jp.add_argument("--split", choices=("dev", "test", "unseen"))
     p_jp.add_argument("--price-in", type=float, help="dollars per million input tokens")
     p_jp.add_argument(
         "--price-out", type=float, help="dollars per million output tokens"
