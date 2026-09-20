@@ -228,6 +228,22 @@ def render_thinking(
     return "\n".join(lines) + "\n"
 
 
+def render_bill(
+    conditions: list[tuple[str, str, list[Trace]]], prices: dict[str, Price]
+) -> str:
+    """What the recorded runs cost to make, at the prices in the price file."""
+    lines = [f"{'condition':<19}{'runs':>6}{'dollars':>10}"]
+    runs = 0
+    total = 0.0
+    for label, model, traces in conditions:
+        dollars = sum(run_cost(t, prices[model]) for t in traces)
+        runs += len(traces)
+        total += dollars
+        lines.append(f"{label:<19}{len(traces):>6}{dollars:>10.2f}")
+    lines.append(f"{'all':<19}{runs:>6}{total:>10.2f}")
+    return "\n".join(lines) + "\n"
+
+
 def _met_by_ticket(cases: dict[str, EvalCase], traces: list[Trace]) -> dict[str, int]:
     out: dict[str, int] = {}
     for t in traces:

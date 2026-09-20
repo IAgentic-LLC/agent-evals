@@ -211,7 +211,7 @@ def test_every_cost_part_runs_from_the_command_line(capsys):
     import sys
 
     parts = ("models", "frontier", "spend", "latency", "plan", "paired")
-    for part in (*parts, "thinking", "repeat"):
+    for part in (*parts, "thinking", "repeat", "bill"):
         argv = ["agent-evals", "cost", "--part", part]
         old, sys.argv = sys.argv, argv
         try:
@@ -220,3 +220,22 @@ def test_every_cost_part_runs_from_the_command_line(capsys):
             sys.argv = old
         out = capsys.readouterr().out
         assert out and all(len(line) <= 78 for line in out.splitlines())
+
+
+def test_the_bill_for_the_four_metered_conditions_is_the_sum_of_their_runs():
+    _, prices, conditions = _recorded()
+    rows = {
+        line.split("  ")[0].strip(): _flat(line)
+        for line in cost.render_bill(conditions, prices).splitlines()[1:]
+    }
+    assert rows["3.6-flash"] == "3.6-flash 126 0.50"
+    assert rows["all"] == "all 504 1.30"
+
+
+def test_the_first_attempt_bill_is_a_floor_because_it_left_thinking_out():
+    _, prices, _ = _recorded()
+    first = [
+        (label, model, read_traces(ROOT / "runs" / run / "traces.jsonl"))
+        for label, model, run in cli.COST_RUNS_FIRST
+    ]
+    assert _flat(cost.render_bill(first, prices).splitlines()[-1]) == "all 504 0.63"

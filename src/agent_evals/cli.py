@@ -646,6 +646,8 @@ def cmd_cost(args) -> int:
         print(cost.render_plan(conditions, prices), end="")
     elif args.part == "thinking":
         print(cost.render_thinking(conditions, prices), end="")
+    elif args.part == "bill":
+        print(cost.render_bill(conditions, prices), end="")
     elif args.part == "repeat":
         first = [
             (label, read_traces(Path("runs") / run / "traces.jsonl"))
@@ -1118,6 +1120,7 @@ def main(argv: list[str] | None = None) -> int:
             "paired",
             "thinking",
             "repeat",
+            "bill",
         ),
     )
     p_co.add_argument("--condition", default="3.6-flash")
