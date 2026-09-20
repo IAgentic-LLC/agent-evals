@@ -8,6 +8,12 @@ embedding_model:
 answer_model:
   provider: gemini
   model_id: gemini-3.6-flash
+
+# The judge of chapter 15. A different model from the one that writes the
+# answers, so that a judge is not grading its own work.
+judge_model:
+  provider: gemini
+  model_id: gemini-3.8-flash
   # Anthropic alternative:
   # provider: anthropic
   # model_id: claude-sonnet-5

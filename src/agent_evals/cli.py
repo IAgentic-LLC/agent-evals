@@ -18,6 +18,8 @@ from agent_evals import (
     forced,
     grader_check,
     invariants,
+    judge,
+    judge_report,
     tool_calls,
     trajectory,
     world,
@@ -438,6 +440,81 @@ def cmd_abstention_report(args) -> int:
     return 0
 
 
+def cmd_judge_run(args) -> int:
+    if args.env_file:
+        load_dotenv(args.env_file)
+    if not os.environ.get("GEMINI_API_KEY"):
+        raise SystemExit("judge run needs GEMINI_API_KEY (use --env-file or export it)")
+    from reliable_agents_labs.models import build_model_client
+
+    items = judge.load_items(args.items)
+    if args.split:
+        items = [i for i in items if i["split"] == args.split]
+    client = build_model_client("judge_model")
+    harness, started, clock = harness_state(), now(), time.perf_counter()
+    rows = asyncio.run(
+        judge.judge_all(
+            items, client, args.version, args.passes, concurrency=args.concurrency
+        )
+    )
+    out = Path(args.out)
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "judgments.jsonl").write_text(
+        "".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows),
+        encoding="utf8",
+    )
+    dump_json(
+        out / "manifest.json",
+        {
+            "judge_model": _judge_model_config(),
+            "prompt": {
+                "version": args.version,
+                "sha256": judge.prompt_hash(args.version),
+                "text": judge.VERSIONS[args.version],
+            },
+            "items": {
+                "path": args.items,
+                "sha256": hashlib.sha256(Path(args.items).read_bytes()).hexdigest(),
+                "count": len(items),
+                "split": args.split,
+            },
+            "passes": args.passes,
+            "concurrency": args.concurrency,
+            "started_at": started.isoformat(timespec="seconds"),
+            "wall_seconds": round(time.perf_counter() - clock, 2),
+            "harness": harness,
+        },
+    )
+    print(judge_report.render_cost(rows), end="")
+    return 0
+
+
+def _judge_model_config():
+    import yaml
+
+    text = Path("config/models.yaml").read_text(encoding="utf8")
+    role = yaml.safe_load(text)["judge_model"]
+    return {"provider": role.get("provider"), "model_id": role.get("model_id")}
+
+
+def cmd_judge_report(args) -> int:
+    items = judge.load_items(args.items)
+    rows = judge_report.load_rows(args.run)
+    split = args.split
+    if args.part == "disagreements":
+        for item, claim in judge_report.disagreements(items, rows, split):
+            print(f"{item['item_id']}: {claim}")
+        return 0
+    parts = {
+        "planted": lambda: judge_report.render_planted(items, rows, split),
+        "real": lambda: judge_report.render_real(items, rows, split),
+        "retest": lambda: judge_report.render_retest(items, rows, split),
+        "cost": lambda: judge_report.render_cost(rows),
+    }
+    print(parts[args.part](), end="")
+    return 0
+
+
 def _forced_inputs(args):
     runs = {
         r: read_traces(Path("runs") / r / "traces.jsonl")
@@ -669,6 +746,27 @@ def main(argv: list[str] | None = None) -> int:
         required=True,
     )
     p_ab.set_defaults(func=cmd_abstention_report)
+    p_ju = sub.add_parser("judge", help="run and read an LLM judge")
+    ju_sub = p_ju.add_subparsers(dest="judge_command", required=True)
+    p_jr = ju_sub.add_parser("run", help="judge every item with the live judge model")
+    p_jr.add_argument("--items", required=True)
+    p_jr.add_argument("--version", choices=sorted(judge.VERSIONS), required=True)
+    p_jr.add_argument("--out", required=True)
+    p_jr.add_argument("--passes", type=int, default=2)
+    p_jr.add_argument("--concurrency", type=int, default=6)
+    p_jr.add_argument("--split", choices=("dev", "test"))
+    p_jr.add_argument("--env-file")
+    p_jr.set_defaults(func=cmd_judge_run)
+    p_jp = ju_sub.add_parser("report", help="read recorded verdicts")
+    p_jp.add_argument("--run", nargs="+", required=True)
+    p_jp.add_argument("--items", required=True)
+    p_jp.add_argument("--split", choices=("dev", "test"))
+    p_jp.add_argument(
+        "--part",
+        choices=("planted", "real", "retest", "cost", "disagreements"),
+        required=True,
+    )
+    p_jp.set_defaults(func=cmd_judge_report)
     p_fo = sub.add_parser("forced", help="the answers that follow three empty searches")
     p_fo.add_argument("--readings", default="datasets/triage_forced.readings.jsonl")
     p_fo.add_argument("--part", choices=("readings", "proxies"), required=True)
