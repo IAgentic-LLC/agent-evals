@@ -39,6 +39,10 @@ class Trace(BaseModel):
     # Every tool call the model asked for, in order: round, name, arguments, whether
     # the tool was on offer, and the result. Empty for runs recorded before chapter 9.
     tool_calls: list[dict[str, Any]] = Field(default_factory=list)
+    # One entry per turn of a conversation, for products that pause and resume:
+    # what was sent, whether the run paused, the state after it, and how many times
+    # the model was called during that turn. Empty for single-shot runs.
+    turns: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class Grade(BaseModel):

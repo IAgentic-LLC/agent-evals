@@ -17,6 +17,8 @@ class RecordingClient:
         self._inner = inner
         self.calls: list[dict[str, Any]] = []
         self._round = 0
+        # Every call to the model, whether or not it asked for a tool.
+        self.model_calls = 0
         # One list of messages per tool loop, kept so results can be read at the end.
         self._histories: dict[int, list[dict]] = {}
         self._batches: dict[int, list[list[dict[str, Any]]]] = {}
@@ -31,6 +33,7 @@ class RecordingClient:
             system=system, user=user, tools=tools, history=history
         )
         self._round += 1
+        self.model_calls += 1
         offered = {t["function"]["name"] for t in tools or []}
         batch = [
             {

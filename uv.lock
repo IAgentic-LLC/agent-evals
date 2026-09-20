@@ -16,6 +16,7 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "reliable-agents-labs" },
+    { name = "reorder-app" },
     { name = "triage-app" },
 ]
 
@@ -38,6 +39,7 @@ requires-dist = [
     { name = "python-dotenv", specifier = ">=1.0" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "reliable-agents-labs", git = "https://github.com/Sebuliba-Adrian/reliable-agents-labs.git" },
+    { name = "reorder-app", git = "https://github.com/IAgentic-LLC/reorder-app.git?tag=ch35-end" },
     { name = "testcontainers", extras = ["postgres"], marker = "extra == 'containers'", specifier = ">=4.15.0" },
     { name = "triage-app", git = "https://github.com/IAgentic-LLC/triage-app.git?tag=ch35-end" },
 ]
@@ -871,6 +873,21 @@ wheels = [
 ]
 
 [[package]]
+name = "langgraph-checkpoint-postgres"
+version = "3.1.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "langgraph-checkpoint" },
+    { name = "orjson" },
+    { name = "psycopg" },
+    { name = "psycopg-pool" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9d/52/6e732f7bf702ef4918b64ea4107e7da21d4276b808f9a651fe34be9b0abe/langgraph_checkpoint_postgres-3.1.2.tar.gz", hash = "sha256:1cd404803ff895a2b79f3ac04ce92b775e6b999715f8333fce674c6d927bba95", size = 155091, upload-time = "2026-08-07T20:40:00.049Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0f/62/8899c9f4d9b97d5b3eb0c07c13cdf5f63342f15f5ef93eaf3477958df602/langgraph_checkpoint_postgres-3.1.2-py3-none-any.whl", hash = "sha256:6a7e38ef16985b54e356cba7bdaf447943aae33d5aaf290026c593bb6b4a6264", size = 52084, upload-time = "2026-08-07T20:39:58.994Z" },
+]
+
+[[package]]
 name = "langgraph-checkpoint-sqlite"
 version = "3.1.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1559,6 +1576,28 @@ dependencies = [
     { name = "python-dotenv" },
     { name = "pyyaml" },
     { name = "qdrant-client" },
+    { name = "tenacity" },
+    { name = "uvicorn", extra = ["standard"] },
+]
+
+[[package]]
+name = "reorder-app"
+version = "0.1.0"
+source = { git = "https://github.com/IAgentic-LLC/reorder-app.git?tag=ch35-end#0cce9d75d03b345b84f40ae3ab30de3e393a1754" }
+dependencies = [
+    { name = "anthropic" },
+    { name = "fastapi" },
+    { name = "httpx" },
+    { name = "langgraph" },
+    { name = "langgraph-checkpoint-postgres" },
+    { name = "openai" },
+    { name = "psycopg", extra = ["binary", "pool"] },
+    { name = "pydantic" },
+    { name = "pyjwt", extra = ["crypto"] },
+    { name = "python-dotenv" },
+    { name = "pyyaml" },
+    { name = "reliable-agents-labs" },
+    { name = "saq", extra = ["postgres"] },
     { name = "tenacity" },
     { name = "uvicorn", extra = ["standard"] },
 ]

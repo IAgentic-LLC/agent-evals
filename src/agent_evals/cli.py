@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 
 from agent_evals import (
     answer_graders,
+    conversation,
     grader_check,
     invariants,
     tool_calls,
@@ -38,6 +39,8 @@ ADAPTERS = (
     "triage-live-customer-id-topics",
     "triage-live-customer-id-stall-guard",
     "triage-live-customer-id-leaky",
+    "reorder-live",
+    "reorder-scripted",
     "triage-replay",
     "triage-scripted-wall",
     "triage-regressed",
@@ -55,6 +58,14 @@ def _make_adapter(name: str, replay: str | None):
         return triage.StallGuardAdapter()
     if name == "triage-live-customer-id-topics":
         return triage.RunbookTopicsAdapter()
+    if name == "reorder-live":
+        from agent_evals.adapters import reorder
+
+        return reorder.ReorderAdapter()
+    if name == "reorder-scripted":
+        from agent_evals.adapters import reorder
+
+        return reorder.ReorderScriptedAdapter()
     if name == "triage-live-customer-id-leaky":
         return triage.LeakyCustomerIdAdapter()
     if name == "triage-scripted-wall":
@@ -77,7 +88,8 @@ def _scorecard_for(run_dir: Path, dataset: str, cases_path: str):
 def cmd_run(args) -> int:
     if args.env_file:
         load_dotenv(args.env_file)
-    if args.adapter.startswith("triage-live") and not os.environ.get("GEMINI_API_KEY"):
+    live = args.adapter.startswith(("triage-live", "reorder-live"))
+    if live and not os.environ.get("GEMINI_API_KEY"):
         raise SystemExit(
             f"{args.adapter} needs GEMINI_API_KEY (use --env-file or export it)"
         )
@@ -101,6 +113,12 @@ def cmd_run(args) -> int:
         wall_seconds=wall_seconds,
     )
     dump_json(out / "manifest.json", manifest)
+    if args.adapter.startswith("reorder"):
+        # A conversation is not scored as routing, so it has no scorecard.
+        print(
+            conversation.render(out.name, {c.case_id: c for c in cases}, traces), end=""
+        )
+        return 0
     sc = build_scorecard(Path(args.dataset).stem, out.name, cases, traces)
     dump_json(out / "scorecard.json", sc.model_dump())
     (out / "scorecard.md").write_text(render_markdown(sc), encoding="utf8")
@@ -326,6 +344,30 @@ def cmd_trajectory(args) -> int:
     return 1 if broken else 0
 
 
+def cmd_conversation_check(args) -> int:
+    from agent_evals import mechanics
+
+    # The real workflow must pass every check, and every planted fault must fail one.
+    wrong = False
+    for variant in mechanics.VARIANTS.values():
+        found = asyncio.run(mechanics.run_mechanics(variant))
+        failed = {name: why for name, why in found.items() if why}
+        is_real = variant.name == "the real workflow"
+        wrong = wrong or (bool(failed) if is_real else not failed)
+        print(f"{variant.name}: {len(failed)} of {len(found)} checks failed")
+        for name, why in failed.items():
+            print(f"  {name}: {why}"[:78])
+    return 1 if wrong else 0
+
+
+def cmd_conversation_grade(args) -> int:
+    cases = {c.case_id: c for c in load_cases(args.dataset)}
+    traces = [t for run in args.run for t in read_traces(Path(run) / "traces.jsonl")]
+    print(conversation.render(" + ".join(args.run), cases, traces), end="")
+    broken = any(conversation.violated_invariants(cases[t.case_id], t) for t in traces)
+    return 1 if broken else 0
+
+
 def cmd_gate(args) -> int:
     sc = _scorecard_for(Path(args.run), Path(args.dataset).stem, args.dataset)
     extra = None
@@ -447,6 +489,19 @@ def main(argv: list[str] | None = None) -> int:
         help="empty or irrelevant results in a row that count as a stall",
     )
     p_traj.set_defaults(func=cmd_trajectory)
+
+    p_conv = sub.add_parser(
+        "conversation", help="check a workflow that pauses and resumes"
+    )
+    conv_sub = p_conv.add_subparsers(dest="conversation_command", required=True)
+    p_cc = conv_sub.add_parser(
+        "check", help="the mechanics, on the real workflow and five faulty ones"
+    )
+    p_cc.set_defaults(func=cmd_conversation_check)
+    p_cg = conv_sub.add_parser("grade", help="grade recorded conversations")
+    p_cg.add_argument("--run", nargs="+", required=True)
+    p_cg.add_argument("--dataset", required=True)
+    p_cg.set_defaults(func=cmd_conversation_grade)
 
     p_gate = sub.add_parser("gate", help="apply a gate policy; exit 1 if blocked")
     p_gate.add_argument("--run", required=True)
