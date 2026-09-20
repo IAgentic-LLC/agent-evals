@@ -1,0 +1,22 @@
+# Dollars per million tokens, from the Gemini API pricing page (standard tier).
+# The page said it was last updated 2026-09-16 UTC; checked on 2026-09-21.
+# Prices are data: the cost commands take this file, and nothing in the code has a price.
+source: https://ai.google.dev/gemini-api/docs/pricing
+checked: 2026-09-21
+unit: dollars per million tokens
+notes:
+  - gemini-3.6-flash goes from 0.75 and 3.75 to 1.50 and 7.50 on 2027-01-01.
+  - The output price includes thinking tokens. The harness records the output tokens the
+    provider reports, which may leave some out, so every cost is a floor.
+  - gemini-2.5-flash-lite is on the page but the API returned "no longer available to new
+    users" on 2026-09-21, so it was not run.
+models:
+  gemini-3.6-flash:
+    input: 0.75
+    output: 3.75
+  gemini-3.5-flash-lite:
+    input: 0.30
+    output: 2.50
+  gemini-2.5-flash:
+    input: 0.30
+    output: 2.50

@@ -16,6 +16,7 @@ from agent_evals import (
     answer_graders,
     compare,
     conversation,
+    cost,
     forced,
     grader_check,
     invariants,
@@ -607,6 +608,38 @@ def cmd_judge_report(args) -> int:
     return 0
 
 
+COST_RUNS = (
+    ("3.6-flash", "gemini-3.6-flash", "triage-cost-3-6"),
+    ("3.5-flash-lite", "gemini-3.5-flash-lite", "triage-cost-3-5-lite"),
+    ("2.5-flash", "gemini-2.5-flash", "triage-cost-2-5"),
+    ("3.6 + stall guard", "gemini-3.6-flash", "triage-cost-3-6-guard"),
+)
+
+
+def cmd_cost(args) -> int:
+    cases = {c.case_id: c for c in load_cases(args.dataset)}
+    prices = cost.load_prices(args.prices)
+    conditions = [
+        (label, model, read_traces(Path("runs") / run / "traces.jsonl"))
+        for label, model, run in COST_RUNS
+    ]
+    picked = next(c for c in conditions if c[0] == args.condition)
+    if args.part == "models":
+        print(cost.render_models(cases, conditions, prices), end="")
+    elif args.part == "frontier":
+        print(cost.render_frontier(cases, conditions, prices), end="")
+    elif args.part == "spend":
+        print(cost.render_spend(cases, picked[2], prices[picked[1]]), end="")
+    elif args.part == "latency":
+        print(cost.render_latency(cases, picked[2]), end="")
+    elif args.part == "plan":
+        print(cost.render_plan(conditions, prices), end="")
+    elif args.part == "paired":
+        others = [(c[0], c[2]) for c in conditions if c[0] != args.condition]
+        print(cost.render_paired(cases, picked[2], others, picked[0]), end="")
+    return 0
+
+
 def cmd_redteam(args) -> int:
     part = args.part
     runs = Path("runs")
@@ -1053,6 +1086,17 @@ def main(argv: list[str] | None = None) -> int:
         required=True,
     )
     p_jp.set_defaults(func=cmd_judge_report)
+    p_co = sub.add_parser("cost", help="cost and latency of the triage product")
+    p_co.add_argument(
+        "--part",
+        required=True,
+        choices=("models", "frontier", "spend", "latency", "plan", "paired"),
+    )
+    p_co.add_argument("--condition", default="3.6-flash")
+    p_co.add_argument("--dataset", default="datasets/triage_heldout_v1.jsonl")
+    p_co.add_argument("--prices", default="config/prices.yaml")
+    p_co.set_defaults(func=cmd_cost)
+
     p_rd = sub.add_parser("redteam", help="attacks on the triage product")
     p_rd.add_argument(
         "--part",

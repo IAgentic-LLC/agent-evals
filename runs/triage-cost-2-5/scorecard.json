@@ -1,0 +1,37 @@
+{
+  "dataset": "triage_heldout_v1",
+  "run": "triage-cost-2-5",
+  "adapters": [
+    "triage-live-customer-id"
+  ],
+  "cases": 42,
+  "trials": 3,
+  "observations": 126,
+  "routing_successes": 103,
+  "routing_rate": 0.8174603174603174,
+  "routing_interval": {
+    "low": 0.7409638233815906,
+    "high": 0.8751721991693945,
+    "confidence": 0.95
+  },
+  "actions_successes": 98,
+  "actions_rate": 0.7777777777777778,
+  "actions_interval": {
+    "low": 0.697579451167011,
+    "high": 0.8415395685651008,
+    "confidence": 0.95
+  },
+  "invariant_violations": 3,
+  "invariant_violation_rate_interval": {
+    "low": 0.008129952024257238,
+    "high": 0.06766601414926507,
+    "confidence": 0.95
+  },
+  "violated_cases": [
+    "HO-039",
+    "HO-041"
+  ],
+  "errors": 22,
+  "latency_median_s": 2.513,
+  "latency_p95_s": 5.85525
+}
