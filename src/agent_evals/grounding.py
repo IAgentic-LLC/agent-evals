@@ -39,7 +39,17 @@ FLAGS = (
 # The flags that say an answer goes beyond its context, as opposed to saying too little.
 BEYOND = ("invalid_citation", "outside_name", "new_number", "ignored_context")
 VERSION = re.compile(r"\b\d+(?:\.\d+)+\b")
-KINDS = ("task", "named", "hard", "none", "fresh", "counterfactual")
+KINDS = (
+    "task",
+    "named",
+    "hard",
+    "none",
+    "fresh",
+    "counterfactual",
+    "outside",
+    "beyond_summary",
+    "false_premise",
+)
 
 
 def mentions(text: str, name: str) -> bool:

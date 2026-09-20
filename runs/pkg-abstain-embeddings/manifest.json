@@ -1,0 +1,24 @@
+{
+  "embedding_model": "gemini-embedding-001",
+  "kinds": {
+    "shipped": "product client, OpenAI-compatible endpoint, no task type",
+    "typed": "native embedContent, RETRIEVAL_DOCUMENT and RETRIEVAL_QUERY"
+  },
+  "corpus": {
+    "path": "pkg_corpus_v1.jsonl",
+    "sha256": "ad1bf82953ebe7235f8fd01a915ee11dd6435db2b55f68e61e65d04f763de4bf",
+    "packages": 107
+  },
+  "queries": {
+    "path": "pkg_abstain_v1.jsonl",
+    "sha256": "969ba459d298419935ee78dd804cc76cef2b02b3e3690346e856d58e0d4cd9d6",
+    "count": 110,
+    "summary_edits": 0
+  },
+  "started_at": "2026-09-20T14:39:35+00:00",
+  "wall_seconds": 105.05,
+  "harness": {
+    "commit": "df17a2cca5410e72e15a911c37f024d48aa6b08e",
+    "dirty": false
+  }
+}

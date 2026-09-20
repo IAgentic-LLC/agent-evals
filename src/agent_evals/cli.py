@@ -42,6 +42,7 @@ ADAPTERS = (
     "reorder-live",
     "reorder-scripted",
     "pkg-live",
+    "pkg-live-permissive",
     "triage-replay",
     "triage-scripted-wall",
     "triage-regressed",
@@ -71,6 +72,10 @@ def _make_adapter(name: str, replay: str | None):
         from agent_evals.adapters import pkgintel
 
         return pkgintel.PkgAnswerAdapter()
+    if name == "pkg-live-permissive":
+        from agent_evals.adapters import pkgintel
+
+        return pkgintel.PermissivePromptAdapter()
     if name == "triage-live-customer-id-leaky":
         return triage.LeakyCustomerIdAdapter()
     if name == "triage-scripted-wall":

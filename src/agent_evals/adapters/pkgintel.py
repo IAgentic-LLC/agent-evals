@@ -26,8 +26,34 @@ from agent_evals.schema import EvalCase, Trace
 
 ROOT = Path(__file__).resolve().parents[3]
 CORPUS = ROOT / "datasets" / "pkg_corpus_v1.jsonl"
-VECTORS = ROOT / "runs" / "pkg-answers-embeddings" / "embeddings-shipped.npz"
 TENANT = "acme"
+
+# A variant of the product's prompt, written for chapter 14 after I had read the chapter 13
+# refusals. It keeps the product's JSON contract word for word and changes when the model
+# may say "not enough information". It is an experiment, not the product's prompt.
+PERMISSIVE_PROMPT = (
+    "You are a package dependency assistant. Answer the question using ONLY the package "
+    "information provided below, never your own general knowledge of these packages. "
+    "If one or more of the listed packages does the job the question asks about, "
+    "recommend them and say what their descriptions say, even when a description is "
+    "short. Say that the information is not enough only when none of the listed "
+    "packages does the job, or when the question asks for a fact the descriptions do "
+    "not contain, such as a version, a license or a date. Respond with a single JSON "
+    'object, no markdown fences, no commentary: {"answer": "your response text", '
+    '"cited_packages": ["exact package names you actually used"]}. '
+    "cited_packages must contain only names that appear in the provided context. "
+    "If the context does not contain enough information to answer, say so plainly in "
+    "answer and leave cited_packages empty."
+)
+
+
+def all_recorded_vectors() -> dict[str, list[float]]:
+    """Every shipped-embedder vector recorded for the package chapters. The same text
+    has the same key in each recording, so they merge."""
+    merged: dict[str, list[float]] = {}
+    for path in sorted((ROOT / "runs").glob("pkg-*embeddings*/embeddings-shipped.npz")):
+        merged.update(load_vectors(path))
+    return merged
 
 
 class PkgAnswerAdapter:
@@ -38,7 +64,7 @@ class PkgAnswerAdapter:
     def __init__(self, client=None, corpus=None, vectors=None) -> None:
         self._client = client
         self._corpus = corpus if corpus is not None else load_corpus(CORPUS)
-        self._vectors = vectors if vectors is not None else load_vectors(VECTORS)
+        self._vectors = vectors if vectors is not None else all_recorded_vectors()
         self._shared: AsyncQdrantClient | None = None
         self._lock = asyncio.Lock()
 
@@ -102,6 +128,24 @@ class PkgAnswerAdapter:
             retrieved=retrieved,
             cited=cited,
         )
+
+
+class PermissivePromptAdapter(PkgAnswerAdapter):
+    """The same run with the permissive prompt patched in for the whole batch."""
+
+    name = "pkg-live-permissive"
+
+    def __enter__(self):
+        from pkgintel_app import tenant_rag
+
+        self._saved = tenant_rag.RAG_SYSTEM_PROMPT
+        tenant_rag.RAG_SYSTEM_PROMPT = PERMISSIVE_PROMPT
+        return self
+
+    def __exit__(self, *exc_info) -> None:
+        from pkgintel_app import tenant_rag
+
+        tenant_rag.RAG_SYSTEM_PROMPT = self._saved
 
 
 # ------------------------------------------------------------ scripted models

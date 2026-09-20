@@ -60,6 +60,13 @@ def _model_config(path: str = "config/models.yaml") -> dict[str, Any] | None:
     return {"provider": role.get("provider"), "model_id": role.get("model_id")}
 
 
+def _prompt_variant() -> dict[str, str]:
+    from agent_evals.adapters.pkgintel import PERMISSIVE_PROMPT
+
+    digest = hashlib.sha256(PERMISSIVE_PROMPT.encode("utf8")).hexdigest()
+    return {"name": "permissive", "sha256": digest, "text": PERMISSIVE_PROMPT}
+
+
 def build_manifest(
     *,
     harness: dict[str, Any] | None,
@@ -99,6 +106,7 @@ def build_manifest(
                 else {}
             ),
         },
+        **({"prompt": _prompt_variant()} if adapter == "pkg-live-permissive" else {}),
     }
 
 
