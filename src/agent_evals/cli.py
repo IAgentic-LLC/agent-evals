@@ -28,6 +28,7 @@ from agent_evals.stats import wilson_interval
 ADAPTERS = (
     "triage-live",
     "triage-live-customer-id",
+    "triage-live-customer-id-leaky",
     "triage-replay",
     "triage-scripted-wall",
     "triage-regressed",
@@ -41,6 +42,8 @@ def _make_adapter(name: str, replay: str | None):
         return triage.LiveAdapter()
     if name == "triage-live-customer-id":
         return triage.CustomerIdAdapter()
+    if name == "triage-live-customer-id-leaky":
+        return triage.LeakyCustomerIdAdapter()
     if name == "triage-scripted-wall":
         return triage.ScriptedWallAdapter()
     if name == "triage-regressed":

@@ -73,10 +73,15 @@ def _script_for(case: EvalCase) -> list[ModelResult]:
     return [_result("Resolved.")]
 
 
-async def _run_once(case: EvalCase, trial: int, adapter: str, client) -> Trace:
+async def _run_once(
+    case: EvalCase, trial: int, adapter: str, client, isolate: bool = True
+) -> Trace:
     # Give this run its own action list. Clearing the shared one is not enough:
     # if the caller touched it first, concurrent runs would all share that list.
-    _actions_var.set([])
+    # `isolate=False` exists only to demonstrate what happens without the reset.
+    if isolate:
+        _actions_var.set([])
+    left_over = len(ACTIONS_TAKEN)
     started = time.perf_counter()
     handled_by, error, answer = None, None, ""
     try:
@@ -94,6 +99,7 @@ async def _run_once(case: EvalCase, trial: int, adapter: str, client) -> Trace:
         actions_taken=[dict(a) for a in ACTIONS_TAKEN],
         error=error,
         latency_s=round(time.perf_counter() - started, 3),
+        ledger_at_start=left_over,
     )
 
 
@@ -138,6 +144,25 @@ class CustomerIdAdapter:
 
     async def run(self, case: EvalCase, trial: int) -> Trace:
         return await _run_once(case, trial, self.name, self._client)
+
+
+class LeakyCustomerIdAdapter(CustomerIdAdapter):
+    """The same product and the same change, run WITHOUT the reset between runs.
+
+    It touches the ledger before the batch starts, so every run inherits one shared
+    list, and it does not clear it between runs. This is a deliberate mistake, kept
+    to show what leaked state does to a score. Never use it to measure anything.
+    """
+
+    name = "triage-live-customer-id-leaky"
+
+    def __enter__(self):
+        super().__enter__()
+        _actions_var.set([])
+        return self
+
+    async def run(self, case: EvalCase, trial: int) -> Trace:
+        return await _run_once(case, trial, self.name, self._client, isolate=False)
 
 
 class ScriptedWallAdapter:

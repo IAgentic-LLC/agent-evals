@@ -33,6 +33,9 @@ class Trace(BaseModel):
     error: str | None = None
     latency_s: float | None = None
     note: str = ""
+    # How many actions were already in the ledger when this run started. Zero when
+    # the run started clean. A run that starts with leftovers is not a clean trial.
+    ledger_at_start: int = 0
 
 
 class Grade(BaseModel):
