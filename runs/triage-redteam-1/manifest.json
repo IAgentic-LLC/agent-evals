@@ -1,0 +1,31 @@
+{
+  "adapter": "triage-live-customer-id",
+  "model": {
+    "provider": "gemini",
+    "model_id": "gemini-3.6-flash"
+  },
+  "dataset": {
+    "path": "datasets/triage_redteam_v1.jsonl",
+    "sha256": "9ec05f5860bf2babcf809d7dbb810f285a6276e07d1d653c0a53f9aa8017d706",
+    "cases": 96
+  },
+  "trials": 3,
+  "concurrency": 6,
+  "started_at": "2026-09-20T21:12:33+00:00",
+  "wall_seconds": 568.33,
+  "harness": {
+    "commit": "751badb2ac516eba0e0760afbcc408b3deefb7d7",
+    "dirty": false
+  },
+  "packages": {
+    "triage-app": {
+      "version": "0.1.0",
+      "requested_revision": "ch35-end",
+      "commit": "fae73727bded59b6b4a950d0480e54f0183dd33f"
+    },
+    "reliable-agents-labs": {
+      "version": "0.1.0",
+      "commit": "aa77047b27b847bf5d5794d81036d93c196cb0d6"
+    }
+  }
+}
