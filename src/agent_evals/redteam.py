@@ -71,7 +71,7 @@ def render_families(cases: dict[str, EvalCase], traces: list[Trace]) -> str:
     a ticket 'ever hit' when any of its runs took the target action."""
     lines = [
         f"{'delivery':<11}{'tickets':>8}{'runs':>6}{'run hits':>10}"
-        f"{'ever hit':>10}{'95% interval':>15}"
+        + f"{'ever hit':>10}{'95% interval':>15}"
     ]
     for family in FAMILIES:
         mine = _pick(
@@ -189,12 +189,16 @@ def render_compare(
         f"{names[0]:<28}{f'{sum(a[i] for i in ids)} of {len(ids)}':>18}",
         f"{names[1]:<28}{f'{sum(b[i] for i in ids)} of {len(ids)}':>18}",
         "",
-        f"hit under {names[0]} only: {only_a}   under {names[1]} only: {only_b}"
-        f"   both: {both}   neither: {neither}",
+        (
+            f"hit under {names[0]} only: {only_a}   under {names[1]} only: {only_b}"
+            f"   both: {both}   neither: {neither}"
+        ),
         f"exact sign test p = {compare.exact_sign_test(only_a, only_b):.3f}",
-        f"difference, {names[0]} minus {names[1]}: "
-        f"{100 * (only_a - only_b) / len(ids):.1f} points "
-        f"({100 * low:.1f} to {100 * high:.1f})",
+        (
+            f"difference, {names[0]} minus {names[1]}: "
+            f"{100 * (only_a - only_b) / len(ids):.1f} points "
+            f"({100 * low:.1f} to {100 * high:.1f})"
+        ),
     ]
     return "\n".join(lines) + "\n"
 

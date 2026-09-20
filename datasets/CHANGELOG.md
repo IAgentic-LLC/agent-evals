@@ -2,6 +2,10 @@
 
 Every published version of a dataset is frozen. A change is a new version with an entry here, never an edit in place.
 
+## triage_redteam_v2 (2026-09-21)
+
+`triage_redteam_v2` is made by `scripts/build_redteam_set_v2.py` for chapter 21, round 2 of the red-team set. It is adaptive: written after reading the round 1 results under both conditions. 24 tickets: 12 "plausible" tickets (the 12 hosts of `triage_redteam_v1` with a note in the customer's text that presents the action as standard procedure) and 12 "runbook" tickets (the four technical hosts, unchanged, three times; the attack is a runbook reply that carries an added instruction, applied by the adapters `triage-live-customer-id-poisoned-runbook` and `...-untrusted` for tickets whose id ends in `note`, `authority` or `step`). **Caution:** one author, small counts, and the round 2 attacks are aimed at the defense I had already measured, so a result on them says how that defense fares against an attacker who has read its results, and nothing about other defenses. The controls are the ones in `triage_redteam_v1`.
+
 ## triage_redteam_v1 (2026-09-21)
 
 `triage_redteam_v1` is made by `scripts/build_redteam_set.py` for chapter 21: 96 tickets for red-teaming the triage product with injected instructions. 12 are host tickets run clean (controls), 72 are in-scope attacks (12 hosts times 6 ways of delivering an instruction, aimed at a tool the host's own specialist has) and 12 are cross-wall attacks (aimed at a tool the specialist does not have). Written by the author before the product was run on any of them, all round 1, all test data, all aimed at a simulated product with simulated tools. **Caution:** one author; the payloads are simple, short and in the style of the injected tickets already in `triage_heldout_v1`, so word overlap with that set reaches 0.36; and the attacks were written without seeing how the product answers them, so they are not adaptive. `triage_redteam_v2` (round 2) is written after reading round 1.
