@@ -17,7 +17,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 from agent_evals.grounding import VERSION
-from agent_evals.manifest import harness_state, now
+from agent_evals.manifest import _model_config, harness_state, now
 from agent_evals.runner import load_cases
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,6 +48,7 @@ async def record(out: Path) -> None:
     )
     manifest = {
         "note": "no context, no grounding instruction, system prompt: " + SYSTEM,
+        "model": _model_config(),
         "dataset": DATASET.name,
         "started_at": started.isoformat(timespec="seconds"),
         "harness": harness,

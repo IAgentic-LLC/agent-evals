@@ -228,9 +228,11 @@ def render_readings(
         for run, traces in runs.items()
         for t, _ in flagged(cases, traces, names, BEYOND)
     }
-    beyond = [r for r in readings if r["reading"] in ("stretch", "unsupported")]
+    beyond = [
+        r for r in readings if r["reading"] in ("borderline", "stretch", "unsupported")
+    ]
     lines = [f"Answers read by hand: {len(readings)} ({', '.join(runs)})", ""]
-    for reading in ("supported", "refusal", "stretch", "unsupported"):
+    for reading in ("supported", "refusal", "borderline", "stretch", "unsupported"):
         lines.append(f"  {reading:<12}{counts[reading]:>4}")
     lines += [
         "",
@@ -257,11 +259,11 @@ def render_refusals(cases: dict[str, EvalCase], runs: dict[str, list[Trace]]) ->
             case = cases[t.case_id]
             if case.slices["kind"] not in grouped or t.error:
                 continue
-            answered.setdefault(t.case_id, {})[run] = bool(t.cited)
             found = check(case, t, [])
             if found["no_citation"] is not None:
                 n += 1
                 k += bool(found["no_citation"])
+                answered.setdefault(t.case_id, {})[run] = bool(t.cited)
         total_k, total_n = total_k + k, total_n + n
         lines.append(f"{run:<16}{_rate(k, n):>30}")
     lines.append(f"{'all runs':<16}{_rate(total_k, total_n):>30}")

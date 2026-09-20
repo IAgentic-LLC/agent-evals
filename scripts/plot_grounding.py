@@ -34,11 +34,16 @@ def plot_readings(out: str) -> None:
         ROOT / "datasets" / "pkg_answers_v1.readings.jsonl"
     )
     kinds = list(grounding.KINDS)
-    colors = {"supported": BLUE, "refusal": GREY, "stretch": RED}
+    colors = {
+        "supported": BLUE,
+        "refusal": GREY,
+        "borderline": AMBER,
+        "stretch": RED,
+    }
     fig, ax = plt.subplots(figsize=(5.5, 2.9), dpi=200)
     for row, kind in enumerate(reversed(kinds)):
         left = 0
-        for reading in ("supported", "refusal", "stretch"):
+        for reading in ("supported", "refusal", "borderline", "stretch"):
             n = sum(
                 r["reading"] == reading and cases[r["case_id"]].slices["kind"] == kind
                 for r in readings

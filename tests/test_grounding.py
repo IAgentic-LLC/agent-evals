@@ -235,7 +235,10 @@ def test_the_model_refuses_a_quarter_of_answerable_questions_it_could_answer(rec
     assert "pkg-answers-1                         15 of 55" in text
     assert "pkg-answers-2                         14 of 55" in text
     assert "all runs                             29 of 110" in text
-    assert "answered in every run 39, refused in every run 14, mixed 4" in text
+    assert (
+        "55 questions: answered in every run 39, refused in every run 13, mixed 3"
+        in text
+    )
 
 
 def test_the_hand_readings_cover_every_answer_and_agree_with_the_traces(recorded):
@@ -248,7 +251,12 @@ def test_the_hand_readings_cover_every_answer_and_agree_with_the_traces(recorded
         for t in traces:
             assert (key[(run, t.case_id)] == "refusal") == (not t.cited)
     counts = {k: sum(v == k for v in key.values()) for k in set(key.values())}
-    assert counts == {"supported": 91, "refusal": 62, "stretch": 1}
+    assert counts == {
+        "supported": 85,
+        "refusal": 62,
+        "borderline": 6,
+        "stretch": 1,
+    }
     assert key[("pkg-answers-1", "PQ-042")] == "stretch"
     beyond = grounding.flagged(
         cases, [t for ts in runs.values() for t in ts], NAMES, grounding.BEYOND

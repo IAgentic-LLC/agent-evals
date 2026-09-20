@@ -40,7 +40,7 @@
 {"run": "pkg-answers-1", "case_id": "PQ-040", "reading": "refusal", "note": ""}
 {"run": "pkg-answers-1", "case_id": "PQ-041", "reading": "supported", "note": ""}
 {"run": "pkg-answers-1", "case_id": "PQ-042", "reading": "stretch", "note": "Says aiohttp is 'similar to Flask'. The summaries never relate the two."}
-{"run": "pkg-answers-1", "case_id": "PQ-043", "reading": "supported", "note": ""}
+{"run": "pkg-answers-1", "case_id": "PQ-043", "reading": "borderline", "note": "Says polars 'can serve as a faster replacement for pandas'. Neither summary states a replacement or a comparison."}
 {"run": "pkg-answers-1", "case_id": "PQ-044", "reading": "refusal", "note": ""}
 {"run": "pkg-answers-1", "case_id": "PQ-045", "reading": "supported", "note": ""}
 {"run": "pkg-answers-1", "case_id": "PQ-046", "reading": "refusal", "note": ""}
@@ -50,13 +50,13 @@
 {"run": "pkg-answers-1", "case_id": "PQ-050", "reading": "refusal", "note": ""}
 {"run": "pkg-answers-1", "case_id": "PQ-051", "reading": "refusal", "note": ""}
 {"run": "pkg-answers-1", "case_id": "PQ-052", "reading": "refusal", "note": ""}
-{"run": "pkg-answers-1", "case_id": "PQ-053", "reading": "supported", "note": ""}
+{"run": "pkg-answers-1", "case_id": "PQ-053", "reading": "borderline", "note": "Says python-dotenv keeps passwords and keys out of source code. The summary says only that it reads a .env file."}
 {"run": "pkg-answers-1", "case_id": "PQ-054", "reading": "refusal", "note": ""}
 {"run": "pkg-answers-1", "case_id": "PQ-055", "reading": "supported", "note": ""}
 {"run": "pkg-answers-1", "case_id": "PQ-056", "reading": "supported", "note": ""}
 {"run": "pkg-answers-1", "case_id": "PQ-057", "reading": "supported", "note": ""}
 {"run": "pkg-answers-1", "case_id": "PQ-058", "reading": "refusal", "note": ""}
-{"run": "pkg-answers-1", "case_id": "PQ-059", "reading": "supported", "note": ""}
+{"run": "pkg-answers-1", "case_id": "PQ-059", "reading": "borderline", "note": "Says scikit-learn can predict a number from many columns. The summary says machine learning and data mining and does not name regression."}
 {"run": "pkg-answers-1", "case_id": "PQ-060", "reading": "refusal", "note": ""}
 {"run": "pkg-answers-1", "case_id": "PQ-061", "reading": "refusal", "note": ""}
 {"run": "pkg-answers-1", "case_id": "PQ-062", "reading": "supported", "note": ""}
@@ -117,7 +117,7 @@
 {"run": "pkg-answers-2", "case_id": "PQ-040", "reading": "supported", "note": ""}
 {"run": "pkg-answers-2", "case_id": "PQ-041", "reading": "supported", "note": ""}
 {"run": "pkg-answers-2", "case_id": "PQ-042", "reading": "refusal", "note": ""}
-{"run": "pkg-answers-2", "case_id": "PQ-043", "reading": "supported", "note": ""}
+{"run": "pkg-answers-2", "case_id": "PQ-043", "reading": "borderline", "note": "Says polars is 'a faster option compared to pandas'. No summary compares them."}
 {"run": "pkg-answers-2", "case_id": "PQ-044", "reading": "refusal", "note": ""}
 {"run": "pkg-answers-2", "case_id": "PQ-045", "reading": "supported", "note": ""}
 {"run": "pkg-answers-2", "case_id": "PQ-046", "reading": "refusal", "note": ""}
@@ -127,13 +127,13 @@
 {"run": "pkg-answers-2", "case_id": "PQ-050", "reading": "refusal", "note": ""}
 {"run": "pkg-answers-2", "case_id": "PQ-051", "reading": "refusal", "note": ""}
 {"run": "pkg-answers-2", "case_id": "PQ-052", "reading": "refusal", "note": ""}
-{"run": "pkg-answers-2", "case_id": "PQ-053", "reading": "supported", "note": ""}
+{"run": "pkg-answers-2", "case_id": "PQ-053", "reading": "borderline", "note": "Same as the first run: the purpose comes from the question, not the summary."}
 {"run": "pkg-answers-2", "case_id": "PQ-054", "reading": "refusal", "note": ""}
 {"run": "pkg-answers-2", "case_id": "PQ-055", "reading": "supported", "note": ""}
 {"run": "pkg-answers-2", "case_id": "PQ-056", "reading": "supported", "note": ""}
 {"run": "pkg-answers-2", "case_id": "PQ-057", "reading": "supported", "note": ""}
 {"run": "pkg-answers-2", "case_id": "PQ-058", "reading": "refusal", "note": ""}
-{"run": "pkg-answers-2", "case_id": "PQ-059", "reading": "supported", "note": ""}
+{"run": "pkg-answers-2", "case_id": "PQ-059", "reading": "borderline", "note": "Same as the first run."}
 {"run": "pkg-answers-2", "case_id": "PQ-060", "reading": "refusal", "note": ""}
 {"run": "pkg-answers-2", "case_id": "PQ-061", "reading": "refusal", "note": ""}
 {"run": "pkg-answers-2", "case_id": "PQ-062", "reading": "supported", "note": ""}
