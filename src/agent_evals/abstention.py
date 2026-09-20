@@ -174,7 +174,7 @@ def render_gate(cases: dict[str, EvalCase], traces: list[Trace]) -> str:
         f"{'test: caught':>15}{'wrongly refused':>17}"
     )
     lines = [head]
-    for cutoff in (0.58, 0.60, 0.62, 0.64, 0.66, 0.68, chosen):
+    for cutoff in sorted({0.58, 0.60, 0.62, 0.64, 0.66, 0.68, chosen}):
         dc, dn, dw, dy = _gate(cases, traces, "dev", cutoff)
         tc, tn, tw, ty = _gate(cases, traces, "test", cutoff)
         mark = " <-" if cutoff == chosen else ""
