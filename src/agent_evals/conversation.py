@@ -75,7 +75,7 @@ def render(run: str, cases: dict[str, EvalCase], traces: list[Trace]) -> str:
         ("paused_right", "paused ok"),
         ("acted_before_approval", "early act"),
         ("acted_after_rejection", "vs reject"),
-        ("missed_after_approval", "missed"),
+        ("missed_after_approval", "no action"),
         ("asked_model_on_resume", "re-asked"),
         ("wrong_sku_ordered", "wrong sku"),
     )

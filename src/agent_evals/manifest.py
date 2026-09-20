@@ -71,7 +71,7 @@ def build_manifest(
     started_at: datetime,
     wall_seconds: float,
 ) -> dict[str, Any]:
-    live = adapter.startswith("triage-live")
+    live = adapter.startswith(("triage-live", "reorder-live"))
     return {
         "adapter": adapter,
         "model": _model_config() if live else None,
@@ -88,6 +88,11 @@ def build_manifest(
         "packages": {
             "triage-app": _source("triage-app"),
             "reliable-agents-labs": _source("reliable-agents-labs"),
+            **(
+                {"reorder-app": _source("reorder-app")}
+                if adapter.startswith("reorder")
+                else {}
+            ),
         },
     }
 

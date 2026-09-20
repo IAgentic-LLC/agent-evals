@@ -270,3 +270,22 @@ def test_the_conversation_commands_exit_0_on_the_recorded_runs(capsys):
     args = ["conversation", "grade", "--dataset", str(DATASET), "--run"]
     assert cli.main(args + [str(ROOT / "runs" / r) for r in RUNS]) == 0
     assert "50 of 52" in capsys.readouterr().out
+
+
+def test_a_reorder_manifest_names_the_model_and_the_reorder_app():
+    from datetime import UTC, datetime
+
+    from agent_evals.manifest import build_manifest
+
+    manifest = build_manifest(
+        harness=None,
+        adapter="reorder-live",
+        dataset=DATASET,
+        cases=26,
+        trials=1,
+        concurrency=1,
+        started_at=datetime.now(UTC),
+        wall_seconds=1.0,
+    )
+    assert manifest["model"]["model_id"] == "gemini-3.6-flash"
+    assert "reorder-app" in manifest["packages"]
