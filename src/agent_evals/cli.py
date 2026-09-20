@@ -65,10 +65,11 @@ ADAPTERS = (
 def _answer_client(model_id: str):
     """The client the product would build, but for a named model instead of the one in
     config/models.yaml (chapter 22)."""
-    from reliable_agents_labs.models import GeminiOpenAICompatibleClient
     from reliable_agents_labs.reliability import RetryingModelClient
 
-    return RetryingModelClient(GeminiOpenAICompatibleClient(model_id=model_id))
+    from agent_evals.metering import MeteredGeminiClient
+
+    return RetryingModelClient(MeteredGeminiClient(model_id=model_id))
 
 
 def _make_adapter(name: str, replay: str | None, answer_model: str | None = None):

@@ -22,6 +22,7 @@ class RecordingClient:
         # What the provider reported for those calls (chapter 22).
         self.input_tokens = 0
         self.output_tokens = 0
+        self.thinking_tokens = 0
         # One list of messages per tool loop, kept so results can be read at the end.
         self._histories: dict[int, list[dict]] = {}
         self._batches: dict[int, list[list[dict[str, Any]]]] = {}
@@ -39,6 +40,7 @@ class RecordingClient:
         self.model_calls += 1
         self.input_tokens += getattr(result, "input_tokens", 0) or 0
         self.output_tokens += getattr(result, "output_tokens", 0) or 0
+        self.thinking_tokens += getattr(result, "thinking_tokens", 0) or 0
         offered = {t["function"]["name"] for t in tools or []}
         batch = [
             {
@@ -56,12 +58,15 @@ class RecordingClient:
         return result
 
     def usage(self) -> dict[str, int]:
-        """Model calls and the tokens the provider reported, summed over the run. Output
-        tokens may or may not include thinking tokens, depending on the provider."""
+        """Model calls and tokens, summed over a run. With a metered client, output
+        tokens are everything the provider bills, and thinking_tokens is the part of
+        them the model did not show. With any other client thinking_tokens is 0 and
+        output tokens are whatever the client reported, which may leave thinking out."""
         return {
             "model_calls": self.model_calls,
             "input_tokens": self.input_tokens,
             "output_tokens": self.output_tokens,
+            "thinking_tokens": self.thinking_tokens,
         }
 
     def finish(self) -> list[dict[str, Any]]:

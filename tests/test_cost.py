@@ -36,6 +36,7 @@ async def test_the_recorder_sums_the_calls_and_tokens_the_provider_reported():
         "model_calls": 2,
         "input_tokens": 250,
         "output_tokens": 50,
+        "thinking_tokens": 0,
     }
 
 
