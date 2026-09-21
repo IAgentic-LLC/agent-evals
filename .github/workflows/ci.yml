@@ -61,3 +61,22 @@ jobs:
           code=$?
           echo "the gate exited with $code"
           test "$code" -eq 1
+      # Chapter 25: every incident record is re-checked against its recorded runs, and the
+      # incident cases gate the fixed version through and the version as shipped out.
+      - name: Every incident record holds
+        run: uv run agent-evals incident --part check
+      - name: Incident cases let the fixed version through
+        run: >
+          uv run agent-evals regress
+          --baseline runs/triage-incident-lite --candidate runs/triage-incident-lite-idboth
+          --dataset datasets/triage_incident_v1.jsonl
+          --policy policies/incident_gate_v1.yaml
+          --changed-file backend/src/triage_app/tools.py
+          --summary "$GITHUB_STEP_SUMMARY"
+      - name: Incident cases block the version as shipped
+        run: |
+          set +e
+          uv run agent-evals regress             --baseline runs/triage-incident-lite-idboth --candidate runs/triage-incident-lite             --dataset datasets/triage_incident_v1.jsonl             --policy policies/incident_gate_v1.yaml             --changed-file backend/src/triage_app/tools.py
+          code=$?
+          echo "the gate exited with $code"
+          test "$code" -eq 1

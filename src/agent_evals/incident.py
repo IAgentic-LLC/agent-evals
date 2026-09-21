@@ -78,9 +78,13 @@ def matches(rule: str, case: EvalCase | None, trace: Trace) -> bool:
 
 # --------------------------------------------------------------------- the ledger
 
+# Zero in 30 runs still allows a rate of about 11 in 100 (95% Wilson interval), and zero in
+# 3 allows more than half. A run after the fix with fewer runs than this shows nothing.
+MIN_RUNS_AFTER = 30
 
-def load_ledger(root: Path) -> list[Incident]:
-    files = sorted((root / "incidents").glob("INC-*.yaml"))
+
+def load_ledger(root: Path, folder: str = "incidents") -> list[Incident]:
+    files = sorted((root / folder).glob("INC-*.yaml"))
     return [
         Incident.model_validate(yaml.safe_load(f.read_text(encoding="utf8")))
         for f in files
@@ -124,8 +128,11 @@ def check(inc: Incident, root: Path) -> list[str]:
         else:
             rows = _runs(root, inc.after, inc.cases)
             bad = sum(matches(inc.rule, cases.get(t.case_id), t) for t in rows)
-            if not rows:
-                problems.append("the run after the fix has no runs of the cases")
+            if len(rows) < MIN_RUNS_AFTER:
+                problems.append(
+                    f"the run after the fix has {len(rows)} runs of the cases, "
+                    f"and it needs {MIN_RUNS_AFTER}"
+                )
             elif bad:
                 problems.append(f"the run after the fix still shows it, {bad} runs")
     elif inc.after:

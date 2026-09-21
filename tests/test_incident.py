@@ -111,6 +111,15 @@ def test_an_incident_marked_fixed_without_a_run_after_the_fix_is_broken():
     assert incident.check(inc, ROOT) == ["a fixed incident needs a run after the fix"]
 
 
+def test_a_run_after_the_fix_with_too_few_runs_shows_nothing():
+    inc = incident.load_ledger(ROOT)[2].model_copy(
+        update={"status": "fixed", "after": "triage-heldout-lite-idnote"}
+    )
+    assert incident.check(inc, ROOT) == [
+        "the run after the fix has 3 runs of the cases, and it needs 30"
+    ]
+
+
 def test_an_open_incident_cannot_have_a_run_after_a_fix():
     inc = incident.load_ledger(ROOT)[2].model_copy(
         update={"after": "triage-incident-lite"}
@@ -190,3 +199,13 @@ def test_the_check_command_fails_when_a_record_is_broken(monkeypatch):
     with contextlib.redirect_stdout(buf):
         code = cli.main(["incident", "--part", "check"])
     assert code == 1 and "INC-001: broken" in buf.getvalue()
+
+
+def test_the_rejected_example_is_refused_and_says_why():
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        code = cli.main(
+            ["incident", "--part", "check", "--incidents", "examples/rejected-ledger"]
+        )
+    assert code == 1
+    assert "has 3 runs of the cases, and it needs 30" in buf.getvalue()

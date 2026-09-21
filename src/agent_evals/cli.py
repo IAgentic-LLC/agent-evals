@@ -1012,7 +1012,8 @@ def cmd_incident(args) -> int:
         return read_traces(root / "runs" / name / "traces.jsonl")
 
     if args.part in ("ledger", "check"):
-        rows = [(i, incident.check(i, root)) for i in incident.load_ledger(root)]
+        ledger = incident.load_ledger(root, args.incidents)
+        rows = [(i, incident.check(i, root)) for i in ledger]
         if args.id:
             rows = [r for r in rows if r[0].id == args.id]
         print(incident.render_ledger(rows), end="")
@@ -1606,6 +1607,9 @@ def main(argv: list[str] | None = None) -> int:
         choices=("ledger", "check", "draft", "reproduce", "fix", "reach", "queue"),
     )
     p_inc.add_argument("--id", help="one incident, for ledger and check")
+    p_inc.add_argument(
+        "--incidents", default="incidents", help="the folder of INC-*.yaml records"
+    )
     p_inc.set_defaults(func=cmd_incident)
 
     p_gs = sub.add_parser("gates", help="how the gate rules behave on recorded runs")
