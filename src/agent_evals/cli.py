@@ -1049,15 +1049,12 @@ def cmd_incident(args) -> int:
             )
 
         k1, k_all = acted(inc_cases, one), acted(inc_cases, every)
-        spread = len(one) * len(held)
         rows = [
             ("IN-001, 1 run", k1, len(one), 1),
             ("IN-001, 3 runs", k1, len(one), 3),
             ("IN-001, 30 runs", k1, len(one), 30),
             ("incident set, 1 trial", k_all, len(every), 16),
             ("incident set, 30 trials", k_all, len(every), 480),
-            ("held-out set, 1 trial", k1, spread, 42),
-            ("held-out set, 3 trials", k1, spread, 126),
         ]
         print(incident.render_reach(rows), end="")
     else:

@@ -166,8 +166,7 @@ def test_the_fix_table_pins_each_version_on_the_incident_set():
 def test_the_reach_of_a_check_grows_with_its_size():
     lines = _run("--part", "reach").splitlines()[1:-1]
     chance = [int(ln.split()[-1].rstrip("%")) for ln in lines]
-    assert chance[:3] == [23, 55, 100]
-    assert chance[-2:] == [21, 50]
+    assert chance == [23, 55, 100, 54, 100]
 
 
 def test_the_review_queue_is_the_same_every_time_and_about_two_hours():

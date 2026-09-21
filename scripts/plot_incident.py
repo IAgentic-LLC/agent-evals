@@ -93,12 +93,15 @@ def reach(out: str) -> None:
     p_own = sum(
         not acted_on_the_right_customer(cases["IN-001"], t) for t in rows
     ) / len(rows)
-    p_held = p_own / 42
+    every = read_traces(ROOT / "runs/triage-incident-lite/traces.jsonl")
+    p_all = sum(
+        not acted_on_the_right_customer(cases[t.case_id], t) for t in every
+    ) / len(every)
     sizes = list(range(1, 301))
     fig, ax = plt.subplots(figsize=(5.8, 3.2), dpi=200)
     for p, color, label in (
         (p_own, BLUE, "the incident's own ticket"),
-        (p_held, GREY, "a held-out set (1 ticket in 42)"),
+        (p_all, GREY, "the 16 tickets together"),
     ):
         ax.plot(
             sizes,
@@ -107,7 +110,7 @@ def reach(out: str) -> None:
             lw=2,
             label=label,
         )
-    for n, p, color in ((3, p_own, BLUE), (126, p_held, GREY)):
+    for n, p, color in ((3, p_own, BLUE), (16, p_all, GREY)):
         ax.plot([n], [100 * (1 - (1 - p) ** n)], "o", color=color, ms=5)
         ax.text(
             n + 4,
