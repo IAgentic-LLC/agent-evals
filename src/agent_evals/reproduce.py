@@ -92,6 +92,7 @@ def render_command(
     prices: dict[str, cost.Price],
     answer_model_adapters: tuple[str, ...],
     out: str | None = None,
+    shell: str = "bash",
 ) -> str:
     data = manifest(root, name)
     what = kind(data)
@@ -116,10 +117,14 @@ def render_command(
     parts.append(f"--out {out}")
     if needs_key(data):
         parts.append("--env-file .env")
-    lines = [f"{parts[0]} {parts[1]}"]
-    for part in parts[2:]:
-        lines[-1] += " " + chr(92)
-        lines.append("  " + part)
+    if shell == "oneline":
+        lines = [" ".join(parts)]
+    else:
+        join = chr(96) if shell == "powershell" else chr(92)
+        lines = [f"{parts[0]} {parts[1]}"]
+        for part in parts[2:]:
+            lines[-1] += " " + join
+            lines.append("  " + part)
     text = chr(10).join(lines) + chr(10)
     dollars, runs = estimate(root, name, data, prices)
     minutes = data.get("wall_seconds", 0) / 60
@@ -172,12 +177,51 @@ def render_endings(traces: list) -> str:
     lines.append(f"{'all':<42}{len(traces):>6}")
     if provider:
         note = (
-            f"{len(provider)} of {len(traces)} errors mention a status code, a quota, "
-            "a credit or a key. Read one before you trust this run: it may be your key, "
-            "your billing or your rate limit, not the product. Delete the run, fix "
-            "that, and run again."
+            f"{len(provider)} of {len(traces)} runs ended in an error that mentions a "
+            "status code, a quota, a credit or a key. Read one before you trust this "
+            "run: it may be your key, your billing or your rate limit, not the "
+            "product. Fix that and run again to the same output folder, which "
+            "replaces this one."
         )
         lines.append("")
         lines += textwrap.wrap(note, width=78)
         lines.append("first error: " + provider[0].error[:64])
+    return chr(10).join(lines) + chr(10)
+
+
+# ------------------------------------------------------------- models a key can use
+
+MODELS_URL = "https://generativelanguage.googleapis.com/v1beta/models"
+
+
+def fetch_json(url: str, key: str) -> dict:
+    import urllib.request
+
+    request = urllib.request.Request(url, headers={"x-goog-api-key": key})
+    with urllib.request.urlopen(request, timeout=30) as response:
+        return json.loads(response.read().decode("utf8"))
+
+
+def list_models(key: str, fetch=fetch_json) -> list[dict]:
+    """The models the key can call to generate text, from the provider's own list."""
+    models: list[dict] = []
+    url = MODELS_URL + "?pageSize=100"
+    while url:
+        page = fetch(url, key)
+        models += page.get("models", [])
+        token = page.get("nextPageToken")
+        url = f"{MODELS_URL}?pageSize=100&pageToken={token}" if token else ""
+    return [
+        m
+        for m in models
+        if "generateContent" in m.get("supportedGenerationMethods", [])
+    ]
+
+
+def render_models(models: list[dict], prices: dict[str, cost.Price]) -> str:
+    lines = [f"{'model id (for --answer-model)':<40}{'price in file':>14}"]
+    for m in sorted(models, key=lambda m: m["name"]):
+        ident = m["name"].removeprefix("models/")
+        lines.append(f"{ident:<40}{'yes' if ident in prices else 'no':>14}")
+    lines.append(f"{len(models)} models can generate text with this key")
     return chr(10).join(lines) + chr(10)

@@ -113,11 +113,68 @@ def test_endings_warns_when_the_errors_look_like_a_key_or_a_quota():
         for i in range(4)
     ] + [Trace(case_id="T-9", adapter="x")]
     text = reproduce.render_endings(traces)
-    assert "4 of 5 errors mention a status code" in text
-    assert "Delete the run, fix that, and run again." in text
+    assert "4 of 5 runs ended in an error that mentions a status code" in text
+    assert "replaces this one." in text
     assert all(len(line) <= 78 for line in text.splitlines())
 
 
 def test_endings_does_not_warn_about_the_products_own_errors():
     traces = [Trace(case_id="T-1", adapter="x", error="ToolLoopDidNotConverge: 12")]
     assert "first error" not in reproduce.render_endings(traces)
+
+
+def test_the_command_can_be_printed_for_powershell_or_on_one_line():
+    shell = _cli(
+        "--part", "command", "--run", "triage-metered-3-6", "--shell", "powershell"
+    )
+    assert chr(96) in shell and chr(92) not in shell
+    buf = io.StringIO()
+    args = ["reproduce", "--part", "command", "--run", "triage-metered-3-6"]
+    with contextlib.redirect_stdout(buf):
+        cli.main([*args, "--shell", "oneline"])
+    first = buf.getvalue().splitlines()[0]
+    assert first.startswith("uv run agent-evals run --adapter") and first.endswith(
+        ".env"
+    )
+    assert chr(92) not in first and chr(96) not in first
+
+
+def test_the_models_a_key_can_use_come_from_the_providers_list_and_show_which_have_a_price():
+    pages = {
+        reproduce.MODELS_URL + "?pageSize=100": {
+            "models": [
+                {
+                    "name": "models/gemini-3.6-flash",
+                    "supportedGenerationMethods": ["generateContent"],
+                },
+                {
+                    "name": "models/embed-x",
+                    "supportedGenerationMethods": ["embedContent"],
+                },
+            ],
+            "nextPageToken": "t2",
+        },
+        reproduce.MODELS_URL + "?pageSize=100&pageToken=t2": {
+            "models": [
+                {
+                    "name": "models/gemini-9-new",
+                    "supportedGenerationMethods": ["generateContent"],
+                }
+            ]
+        },
+    }
+    seen = []
+
+    def fetch(url, key):
+        seen.append(key)
+        return pages[url]
+
+    models = reproduce.list_models("k", fetch=fetch)
+    assert [m["name"] for m in models] == [
+        "models/gemini-3.6-flash",
+        "models/gemini-9-new",
+    ]
+    assert set(seen) == {"k"}
+    text = reproduce.render_models(models, PRICES)
+    assert "gemini-3.6-flash" in text and "yes" in text and "no" in text
+    assert "embed-x" not in text and "2 models can generate text" in text

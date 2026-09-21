@@ -1108,6 +1108,16 @@ def cmd_reproduce(args) -> int:
     if args.part == "list":
         print(reproduce.render_list(root, prices, args.match), end="")
         return 0
+    if args.part == "models":
+        if args.env_file:
+            load_dotenv(args.env_file)
+        key = os.environ.get("GEMINI_API_KEY")
+        if not key:
+            raise SystemExit(
+                "models needs GEMINI_API_KEY (use --env-file or export it)"
+            )
+        print(reproduce.render_models(reproduce.list_models(key), prices), end="")
+        return 0
     if not args.run:
         raise SystemExit(f"--part {args.part} needs --run NAME")
     if args.part == "endings":
@@ -1116,7 +1126,12 @@ def cmd_reproduce(args) -> int:
         return 0
     print(
         reproduce.render_command(
-            root, args.run, prices, tuple(answer_model_adapters()), args.out
+            root,
+            args.run,
+            prices,
+            tuple(answer_model_adapters()),
+            args.out,
+            args.shell,
         ),
         end="",
     )
@@ -1684,10 +1699,19 @@ def main(argv: list[str] | None = None) -> int:
     p_lb.set_defaults(func=cmd_leaderboard)
 
     p_rp = sub.add_parser("reproduce", help="the command that made a recorded run")
-    p_rp.add_argument("--part", choices=("list", "command", "endings"), required=True)
+    p_rp.add_argument(
+        "--part", choices=("list", "command", "endings", "models"), required=True
+    )
     p_rp.add_argument("--run", help="a folder name under runs/ (for command)")
     p_rp.add_argument("--match", default="", help="only runs whose name has this text")
     p_rp.add_argument("--out", help="where the new run is written")
+    p_rp.add_argument(
+        "--shell",
+        choices=("bash", "powershell", "oneline"),
+        default="bash",
+        help="how to break a long command: backslash, backtick, or not at all",
+    )
+    p_rp.add_argument("--env-file", help="a .env file with GEMINI_API_KEY (models)")
     p_rp.set_defaults(func=cmd_reproduce)
 
     p_gs = sub.add_parser("gates", help="how the gate rules behave on recorded runs")
