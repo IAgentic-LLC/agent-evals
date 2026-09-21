@@ -1109,7 +1109,11 @@ def cmd_reproduce(args) -> int:
         print(reproduce.render_list(root, prices, args.match), end="")
         return 0
     if not args.run:
-        raise SystemExit("--part command needs --run NAME")
+        raise SystemExit(f"--part {args.part} needs --run NAME")
+    if args.part == "endings":
+        traces = read_traces(root / "runs" / args.run / "traces.jsonl")
+        print(reproduce.render_endings(traces), end="")
+        return 0
     print(
         reproduce.render_command(
             root, args.run, prices, tuple(answer_model_adapters()), args.out
@@ -1680,7 +1684,7 @@ def main(argv: list[str] | None = None) -> int:
     p_lb.set_defaults(func=cmd_leaderboard)
 
     p_rp = sub.add_parser("reproduce", help="the command that made a recorded run")
-    p_rp.add_argument("--part", choices=("list", "command"), required=True)
+    p_rp.add_argument("--part", choices=("list", "command", "endings"), required=True)
     p_rp.add_argument("--run", help="a folder name under runs/ (for command)")
     p_rp.add_argument("--match", default="", help="only runs whose name has this text")
     p_rp.add_argument("--out", help="where the new run is written")

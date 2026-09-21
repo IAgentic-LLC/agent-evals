@@ -4,3 +4,5 @@ __pycache__/
 .env
 .pytest_cache/
 .ruff_cache/
+# Runs you make yourself (appendix A) are yours, not part of the book's record.
+runs/mine-*/

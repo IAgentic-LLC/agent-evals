@@ -6,7 +6,9 @@ manifest back into the command that made the run, and says what the run cost me,
 you can decide whether to spend the same on your own key. It never calls a model.
 """
 
+import collections
 import json
+import re
 import textwrap
 from pathlib import Path
 
@@ -62,7 +64,7 @@ def _dollars(x: float | None) -> str:
 def render_list(root: Path, prices: dict[str, cost.Price], match: str = "") -> str:
     lines = [f"{'run':<30}{'model':<16}{'trials':>7}{'runs':>6}{'cost':>9}{'key':>6}"]
     total = 0.0
-    shown = 0
+    shown = priced = 0
     for folder in sorted((root / "runs").iterdir()):
         if match not in folder.name:
             continue
@@ -72,13 +74,14 @@ def render_list(root: Path, prices: dict[str, cost.Price], match: str = "") -> s
         dollars, runs = estimate(root, folder.name, data, prices)
         total += dollars or 0.0
         shown += 1
+        priced += dollars is not None
         model = (data.get("model") or {}).get("model_id", "").removeprefix("gemini-")
         lines.append(
             f"{folder.name:<30}{model:<16}{data['trials']:>7}{runs:>6}"
             f"{_dollars(dollars):>9}{'yes' if needs_key(data) else 'no':>6}"
         )
     lines.append(
-        f"{shown} runs, about {_dollars(total)} in all at the prices in the file"
+        f"{shown} runs, {priced} with tokens recorded, about {_dollars(total)} for those"
     )
     return "\n".join(lines) + "\n"
 
@@ -98,7 +101,8 @@ def render_command(
             "shows its command."
         )
         return chr(10).join(textwrap.wrap(note, width=78)) + chr(10)
-    out = out or f"runs/mine-{name.removeprefix('triage-')}"
+    short = name.removeprefix("mine-").removeprefix("triage-")
+    out = out or f"runs/mine-{short}"
     parts = [
         "uv run agent-evals run",
         f"--adapter {data['adapter']}",
@@ -140,3 +144,40 @@ def render_command(
     for note in notes:
         text += chr(10).join(textwrap.wrap(note, width=78)) + chr(10)
     return text
+
+
+# ------------------------------------------------------------- how a run ended
+
+PROVIDER_ERROR = re.compile(
+    r"\b(401|402|403|404|429|5\d\d)\b|quota|credit|rate.?limit|api key|permission",
+    re.IGNORECASE,
+)
+
+
+def _kind(error: str) -> str:
+    return error.split(":")[0].strip()[:40]
+
+
+def render_endings(traces: list) -> str:
+    """How each run ended, counted by error kind, with a warning when the errors look like
+    a problem with your key, your quota or the provider and not with the product. A live
+    run that finished in seconds and is all errors is not data."""
+    ended = collections.Counter(
+        _kind(t.error) if t.error else "no error" for t in traces
+    )
+    provider = [t for t in traces if t.error and PROVIDER_ERROR.search(t.error)]
+    lines = [f"{'how the run ended':<42}{'runs':>6}"]
+    for kind_name, count in sorted(ended.items(), key=lambda kv: (-kv[1], kv[0])):
+        lines.append(f"{kind_name:<42}{count:>6}")
+    lines.append(f"{'all':<42}{len(traces):>6}")
+    if provider:
+        note = (
+            f"{len(provider)} of {len(traces)} errors mention a status code, a quota, "
+            "a credit or a key. Read one before you trust this run: it may be your key, "
+            "your billing or your rate limit, not the product. Delete the run, fix "
+            "that, and run again."
+        )
+        lines.append("")
+        lines += textwrap.wrap(note, width=78)
+        lines.append("first error: " + provider[0].error[:64])
+    return chr(10).join(lines) + chr(10)
