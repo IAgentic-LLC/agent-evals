@@ -24,6 +24,7 @@ from agent_evals import (
     judge,
     judge_report,
     labels,
+    online,
     redteam,
     regression,
     reliability,
@@ -967,6 +968,89 @@ CI_RUNS = (
 )
 
 
+def cmd_online(args) -> int:
+    root = Path(".")
+    if args.part == "review":
+        print(online.render_review(), end="")
+        return 0
+    held = {c.case_id: c for c in load_cases("datasets/triage_heldout_v1.jsonl")}
+    chg = {c.case_id: c for c in load_cases("datasets/triage_change_v1.jsonl")}
+
+    def traces(name):
+        return read_traces(root / "runs" / name / "traces.jsonl")
+
+    if args.part == "proxy":
+        rows = [
+            ("default", held, traces("triage-metered-3-6")),
+            ("default with the stall guard", held, traces("triage-metered-3-6-guard")),
+            ("2.5-flash", held, traces("triage-metered-2-5")),
+            ("3.5-flash-lite", held, traces("triage-metered-3-5-lite")),
+            ("change set as shipped", chg, traces("triage-change-base")),
+            ("change set with the hint", chg, traces("triage-change-topics")),
+        ]
+        print(online.render_proxy(rows), end="")
+        return 0
+    if args.part == "mix":
+        text = online.render_mix(
+            held, traces("triage-metered-3-6"), chg, traces("triage-change-base")
+        )
+        print(text, end="")
+        return 0
+    pops = online.load_defaults(root)
+    draws = args.draws
+    if args.part == "false-alarms":
+        rows = [
+            (n, online.false_alarms(pops["3.6-flash (12)"], n, draws, seed=1))
+            for n in TRAFFIC
+        ]
+        print(online.render_false_alarms(rows, online.MONITOR_DAYS), end="")
+    elif args.part == "falls":
+        rows = [
+            (name, n, online.detection(pops[a], pops[b], n, draws, seed=2))
+            for name, a, b in FALLS
+            for n in TRAFFIC
+        ]
+        print(online.render_detection(rows, 7), end="")
+    elif args.part == "mix-shift":
+        rows = []
+        for label, before, after, stratum in MIX_SHIFTS:
+            for n in TRAFFIC[1:]:
+                found = online.detection(
+                    pops[before], pops[after], n, draws, seed=3, stratum=stratum
+                )
+                rows.append((label, n, found))
+        print(online.render_detection(rows, 7, "watching"), end="")
+    else:
+        names = ("hint", "2.5-flash", "3.6 + guard")
+        rows = [
+            (
+                n,
+                [
+                    online.shadow_power(
+                        pops["3.6-flash (12)"], pops[b], n, draws, seed=4
+                    )
+                    for b in names
+                ],
+            )
+            for n in SHADOW_SIZES
+        ]
+        print(online.render_shadow(rows, ["hint", "2.5-flash", "guard"]), end="")
+    return 0
+
+
+TRAFFIC = (10, 40, 160)
+SHADOW_SIZES = (10, 20, 42, 84, 168)
+FALLS = (
+    ("guard -> default", "3.6 + guard", "3.6-flash"),
+    ("2.5-flash -> lite", "2.5-flash", "3.5-lite"),
+)
+MIX_SHIFTS = (
+    ("all tickets", "3.6-flash (12)", "change base", None),
+    ("technical tickets", "3.6-flash (12)", "change base", "technical"),
+    ("topic other", "default by topic", "change base by topic", "other"),
+)
+
+
 def cmd_gates(args) -> int:
     cases = {c.case_id: c for c in load_cases(args.dataset)}
     if args.part == "ci-cost":
@@ -1400,6 +1484,23 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_gate.add_argument("--permissions", help="what each ticket itself asked for")
     p_gate.set_defaults(func=cmd_gate)
+
+    p_on = sub.add_parser("online", help="what a deployed product can be watched by")
+    p_on.add_argument(
+        "--part",
+        required=True,
+        choices=(
+            "proxy",
+            "mix",
+            "false-alarms",
+            "falls",
+            "mix-shift",
+            "shadow",
+            "review",
+        ),
+    )
+    p_on.add_argument("--draws", type=int, default=500)
+    p_on.set_defaults(func=cmd_online)
 
     p_gs = sub.add_parser("gates", help="how the gate rules behave on recorded runs")
     p_gs.add_argument(
