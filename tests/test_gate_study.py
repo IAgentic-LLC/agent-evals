@@ -92,17 +92,32 @@ def test_the_drops_table_is_pinned_and_a_gain_is_never_blocked():
     assert "3.6-flash -> 3.6 + guard -22.6 0/0 0/0 0/0 0/0" in text
 
 
+def test_the_nothing_changed_table_also_draws_from_twelve_real_passes():
+    text = _flat(_render("nothing"))
+    assert "80 pairs of three passes, six passes each split" in text
+    second = text.split("80 pairs of three passes, six passes each split")[1]
+    assert "point, drop over 5 7% 0% 93%" in second
+    assert "interval, margin 5 0% 39% 61%" in second
+    assert "400 draws from 12 passes of 3.6-flash" in second
+
+
 def test_the_retry_table_is_pinned_and_a_retry_costs_little_detection_for_the_point_rule():
     text = _flat(_render("retry"))
-    assert "point, drop over 5 2 / 0 96 / 93 100 / 100" in text
-    assert "interval, margin 5 41 / 25 100 / 100 100 / 100" in text
+    assert "point, drop over 5 9 / 3 96 / 93 100 / 100" in text
+    assert "sign test 1 / 0 1 / 0 100 / 100" in text
+    assert "interval, margin 5 42 / 25 100 / 100 100 / 100" in text
 
 
-def test_the_simulation_is_seeded_so_it_gives_the_same_answer_twice():
-    data = _recorded()
-    a = gate_study.retry_nothing_changed(data["3.6-flash"], 40, seed=3)
-    b = gate_study.retry_nothing_changed(data["3.6-flash"], 40, seed=3)
+def test_the_twelve_passes_are_six_from_chapter_22_and_six_more_and_draws_are_seeded():
+    cases = {c.case_id: c for c in load_cases(HELD)}
+    twelve = gate_study.load_default_twelve(ROOT, cases)
+    assert len(twelve) == 12 and len(twelve[0]) == 42
+    assert twelve[:6] == _recorded()["3.6-flash"]
+    a = gate_study.retry_nothing_changed(twelve, 10, seed=3)
+    b = gate_study.retry_nothing_changed(twelve, 10, seed=3)
     assert a == b
+    c = gate_study.nothing_changed_sampled(twelve, 10, seed=3)
+    assert c == gate_study.nothing_changed_sampled(twelve, 10, seed=3)
 
 
 def test_what_one_candidate_costs_in_model_calls_is_pinned():

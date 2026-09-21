@@ -977,7 +977,13 @@ def cmd_gates(args) -> int:
     if args.part == "nothing":
         outcomes = [gate_study.nothing_changed(v) for v in data.values()]
         text = gate_study.render_nothing_changed(
-            gate_study.pooled(outcomes), 20 * len(outcomes)
+            gate_study.pooled(outcomes),
+            f"{20 * len(outcomes)} pairs of three passes, six passes each split",
+        )
+        twelve = gate_study.load_default_twelve(Path("."), cases)
+        text += "\n" + gate_study.render_nothing_changed(
+            gate_study.nothing_changed_sampled(twelve, args.draws),
+            f"{args.draws} draws from 12 passes of 3.6-flash",
         )
     elif args.part == "drops":
         rows = [
@@ -993,7 +999,9 @@ def cmd_gates(args) -> int:
         scenarios = [
             (
                 "nothing changed",
-                gate_study.retry_nothing_changed(data["3.6-flash"], args.draws),
+                gate_study.retry_nothing_changed(
+                    gate_study.load_default_twelve(Path("."), cases), args.draws
+                ),
             ),
             (
                 "10-point drop",

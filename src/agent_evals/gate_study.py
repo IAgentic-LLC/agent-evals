@@ -27,6 +27,8 @@ RULES = (
     ("interval, margin 5", "interval", 5.0),
 )
 
+EXTRA_RUNS = ("triage-metered-3-6-b", "triage-metered-3-6-c")
+
 SHORT = {
     "point, drop over 5": "point",
     "sign test": "sign",
@@ -152,7 +154,7 @@ def _pct(x: float) -> str:
     return f"{100 * x:.0f}"
 
 
-def render_nothing_changed(outcomes: dict[str, Outcome], pairs: int) -> str:
+def render_nothing_changed(outcomes: dict[str, Outcome], note: str) -> str:
     lines = [f"{'rule':<22}{'blocked':>9}{'held':>7}{'passed':>8}"]
     for label, _, _ in RULES:
         o = outcomes[label]
@@ -160,7 +162,7 @@ def render_nothing_changed(outcomes: dict[str, Outcome], pairs: int) -> str:
             f"{label:<22}{_pct(o.block) + '%':>9}{_pct(o.hold) + '%':>7}"
             + f"{_pct(o.passed) + '%':>8}"
         )
-    lines.append(f"{pairs} pairs of three passes where nothing changed")
+    lines.append(note)
     return "\n".join(lines) + "\n"
 
 
@@ -184,26 +186,34 @@ def render_drops(rows: list[tuple[str, float, dict[str, Outcome]]]) -> str:
 # ------------------------------------------------------------------- retrying
 
 
-def _rates(base: list[Pass]) -> dict[str, float]:
-    return {k: sum(p[k] for p in base) / len(base) for k in base[0]}
-
-
-def _draw(rng: random.Random, rates: dict[str, float]) -> Pass:
-    return {k: rng.random() < r for k, r in rates.items()}
+def nothing_changed_sampled(
+    base: list[Pass], draws: int, seed: int = 0
+) -> dict[str, Outcome]:
+    """Draws of three passes against three other passes of one condition, from a
+    condition with more than six. The draws are seeded, so they are the same every time."""
+    rng = random.Random(seed)
+    votes: dict[str, list[str]] = {label: [] for label, _, _ in RULES}
+    for i in range(draws):
+        picked = rng.sample(range(len(base)), 2 * SIDE)
+        b = [base[j] for j in picked[:SIDE]]
+        c = [base[j] for j in picked[SIDE:]]
+        for label, verdict in _verdicts(_diffs(b, c), i).items():
+            votes[label].append(verdict)
+    return {label: _tally(v) for label, v in votes.items()}
 
 
 def retry_nothing_changed(base: list[Pass], draws: int, seed: int = 0):
-    """A simulation, because six passes cannot make three sets of three. Each ticket
-    keeps the rate it had over the recorded passes, and every simulated pass is drawn
-    from those rates. Returns {rule: (blocked at first try, blocked after a retry)}."""
+    """A baseline of three passes and two tries of three fresh passes each, all nine
+    different, drawn from one condition's recorded passes, so nothing changed. Returns
+    {rule: (not passed at the first try, not passed at both tries)}. Needs nine passes."""
     rng = random.Random(seed)
-    rates = _rates(base)
     first = {label: 0 for label, _, _ in RULES}
     both = dict(first)
     for i in range(draws):
-        b = [_draw(rng, rates) for _ in range(SIDE)]
-        v1 = _verdicts(_diffs(b, [_draw(rng, rates) for _ in range(SIDE)]), 2 * i)
-        v2 = _verdicts(_diffs(b, [_draw(rng, rates) for _ in range(SIDE)]), 2 * i + 1)
+        picked = rng.sample(range(len(base)), 3 * SIDE)
+        b = [base[j] for j in picked[:SIDE]]
+        v1 = _verdicts(_diffs(b, [base[j] for j in picked[SIDE : 2 * SIDE]]), 2 * i)
+        v2 = _verdicts(_diffs(b, [base[j] for j in picked[2 * SIDE :]]), 2 * i + 1)
         for label, _, _ in RULES:
             no1 = v1[label] != "pass"
             first[label] += no1
@@ -262,3 +272,13 @@ def load(root: Path, cases: dict[str, EvalCase]) -> dict[str, list[Pass]]:
         )
         for name, runs in CONDITIONS.items()
     }
+
+
+def load_default_twelve(root: Path, cases: dict[str, EvalCase]) -> list[Pass]:
+    """The default condition's twelve recorded passes: the six above, and two more runs
+    of the same product made for this chapter."""
+    runs = [*CONDITIONS["3.6-flash"], *EXTRA_RUNS]
+    return passes(
+        cases,
+        [regression.read_traces(root / "runs" / r / "traces.jsonl") for r in runs],
+    )

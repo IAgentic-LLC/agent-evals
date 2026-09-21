@@ -5,8 +5,9 @@
 #
 # Both numbers are demonstration values. How large a fall a change may cause is the
 # product owner's decision, and the study only shows what each value costs: a tripwire
-# at 5 points blocks about 4 unchanged pairs in 100 and about 96 in 100 of real
-# 10-point falls, on 42 tickets and three trials each.
+# at 5 points blocks between 4 and 9 unchanged pairs in 100, depending on how
+# they are drawn, and about 96 in 100 of real 10-point falls, on 42 tickets and three
+# trials each.
 name: high-risk-change-v2
 require:
   same_dataset: true

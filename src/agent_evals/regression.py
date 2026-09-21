@@ -322,6 +322,19 @@ def render(report: Report) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _searches(traces: list[Trace], keep: set[str]) -> dict[str, int]:
+    """Runbook searches that found an entry and searches that found none."""
+    counts = {"found": 0, "empty": 0}
+    for t in traces:
+        if t.case_id not in keep:
+            continue
+        for call in t.tool_calls:
+            if call["name"] == "search_runbook":
+                empty = "no matching runbook entry" in str(call.get("result"))
+                counts["empty" if empty else "found"] += 1
+    return counts
+
+
 def render_detail(
     cases: dict[str, EvalCase], base: list[Trace], cand: list[Trace], key: str
 ) -> str:
@@ -345,14 +358,31 @@ def render_detail(
     for name, keep in [*groups, ("all", set(ids))]:
         b, c = share(base, keep), share(cand, keep)
         lines.append(f"{name:<14}{len(keep):>8}{b:>9.1f}%{c:>10.1f}%{c - b:>+9.1f}")
-    lines.append("")
-    lines.append(f"{'run ended':<14}{'baseline':>10}{'candidate':>11}")
+    columns = [*groups, ("all", set(ids))]
+    head = "".join(f"{name:>11}" for name, _ in columns)
+    lines += ["", f"{'run ended':<14}{head}"]
     for outcome in cost.OUTCOMES:
-        counts = [
-            sum(cost.outcome(cases[t.case_id], t) == outcome for t in traces)
-            for traces in (base, cand)
-        ]
-        lines.append(f"{outcome:<14}{counts[0]:>10}{counts[1]:>11}")
+        cells = []
+        for _, keep in columns:
+            n = [
+                sum(
+                    cost.outcome(cases[t.case_id], t) == outcome
+                    for t in traces
+                    if t.case_id in keep
+                )
+                for traces in (base, cand)
+            ]
+            cells.append(f"{n[0]} to {n[1]}")
+        lines.append(f"{outcome:<14}" + "".join(f"{c:>11}" for c in cells))
+    if any(t.tool_calls for t in cand):
+        lines += ["", f"{'runbook search':<14}{head}"]
+        for word in ("found", "empty"):
+            cells = []
+            for _, keep in columns:
+                n = [_searches(traces, keep)[word] for traces in (base, cand)]
+                cells.append(f"{n[0]} to {n[1]}")
+            lines.append(f"{word:<14}" + "".join(f"{c:>11}" for c in cells))
+    lines += ["", "each cell is the baseline to the candidate, in runs and searches"]
     diffs = ticket_differences(cases, base, cand)
     better = sum(d > 0 for d in diffs)
     worse = sum(d < 0 for d in diffs)

@@ -340,5 +340,9 @@ def test_the_detail_table_shows_where_the_change_helped_and_where_it_did_not(cap
     assert "crash 12 47.2% 100.0% +52.8" in flat
     assert "login 10 0.0% 6.7% +6.7" in flat
     assert "other 18 20.4% 72.2% +51.9" in flat
-    assert "tool loop 88 33" in flat and "handoff loop 4 10" in flat
+    assert "met 17 to 36 0 to 2 11 to 39 28 to 77" in flat
+    assert "tool loop 19 to 0 26 to 20 43 to 13 88 to 33" in flat
+    assert "handoff loop 0 to 0 4 to 8 0 to 2 4 to 10" in flat
+    assert "found 16 to 41 33 to 71 0 to 51 49 to 163" in flat
+    assert "empty 127 to 54 103 to 55 254 to 140 484 to 249" in flat
     assert "tickets: 26 better, 0 worse, 14 same; exact sign test p < 0.001" in flat
