@@ -1,0 +1,44 @@
+# Version 2 of the change gate (chapter 23). Version 1 was fixed before the runbook topics
+# change was run, and it stays as it was. This version adds one check after the study of
+# how the gate's rules behave on recorded runs: a tripwire that blocks a large fall at
+# once, beside the interval check that holds anything it cannot clear.
+#
+# Both numbers are demonstration values. How large a fall a change may cause is the
+# product owner's decision, and the study only shows what each value costs: a tripwire
+# at 5 points blocks about 4 unchanged pairs in 100 and about 96 in 100 of real
+# 10-point falls, on 42 tickets and three trials each.
+name: high-risk-change-v2
+require:
+  same_dataset: true
+  same_model: true
+  min_tickets: 30
+checks:
+  - id: customer-check
+    kind: hard
+    check: customer
+    tiers: [medium, high]
+  - id: forbidden-actions
+    kind: hard
+    check: forbidden
+    tiers: [medium, high]
+  - id: tripwire
+    kind: regression
+    method: point        # a fall past the margin blocks, whatever the interval says
+    margin_points: 5
+    tiers: [high]
+  - id: not-worse-than-baseline
+    kind: regression
+    method: interval     # an unsettled result goes to a person
+    margin_points: 10
+    on_inconclusive: hold
+    tiers: [high]
+  - id: cost-per-success
+    kind: budget
+    budget: cost_per_success
+    max_ratio: 1.5
+    tiers: [high]
+  - id: latency-p95
+    kind: budget
+    budget: latency_p95
+    max_ratio: 1.5
+    tiers: [high]

@@ -1,0 +1,78 @@
+name: live-eval
+
+# Runs a candidate on real tickets with a real model, then applies the change gate. It
+# costs money, about $1.13 in model calls for both sets at the prices checked on
+# 2026-09-21, and it needs the GEMINI_API_KEY secret. So it never starts by itself: a
+# person starts it, from the Actions tab, when a change to the product needs its evals.
+#
+# The secret has not been added to this repository. Adding it, and deciding who may start
+# this workflow, are the repository owner's decisions.
+on:
+  workflow_dispatch:
+    inputs:
+      adapter:
+        description: The candidate, an adapter that accepts --answer-model
+        type: choice
+        default: triage-live-customer-id-topics
+        options:
+          - triage-live-customer-id-topics
+          - triage-live-customer-id-stall-guard
+      changed_file:
+        description: A file the change touches, so Book 3's release gate can set the tier
+        type: string
+        default: backend/src/triage_app/tools.py
+
+permissions:
+  contents: read
+
+concurrency:
+  group: live-eval
+  cancel-in-progress: false
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      # Inputs go through the environment, and are never pasted into a script.
+      ADAPTER: ${{ inputs.adapter }}
+      CHANGED_FILE: ${{ inputs.changed_file }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+      - run: uv sync --locked
+      - name: Stop early when the key is missing
+        run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "::error::the GEMINI_API_KEY secret is not set"
+            exit 1
+          fi
+      - name: Run the candidate on the change set
+        run: >
+          uv run agent-evals run --adapter "$ADAPTER"
+          --dataset datasets/triage_change_v1.jsonl --out out/change
+          --trials 3 --concurrency 6 --answer-model gemini-3.6-flash
+      - name: Run the candidate on the held-out tickets
+        run: >
+          uv run agent-evals run --adapter "$ADAPTER"
+          --dataset datasets/triage_heldout_v1.jsonl --out out/heldout
+          --trials 3 --concurrency 6 --answer-model gemini-3.6-flash
+      - name: Gate on the change set
+        run: >
+          uv run agent-evals regress --baseline runs/triage-change-base
+          --candidate out/change --dataset datasets/triage_change_v1.jsonl
+          --policy policies/change_gate_v2.yaml --changed-file "$CHANGED_FILE"
+          --summary "$GITHUB_STEP_SUMMARY"
+      - name: Gate on the held-out tickets
+        run: >
+          uv run agent-evals regress --baseline runs/triage-metered-3-6
+          --candidate out/heldout --dataset datasets/triage_heldout_v1.jsonl
+          --policy policies/change_gate_v2.yaml --changed-file "$CHANGED_FILE"
+          --summary "$GITHUB_STEP_SUMMARY"
+      # Kept even when a gate blocks, so a person can read the traces.
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: candidate-runs
+          path: out/

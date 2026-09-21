@@ -18,6 +18,7 @@ from agent_evals import (
     conversation,
     cost,
     forced,
+    gate_study,
     grader_check,
     invariants,
     judge,
@@ -954,6 +955,73 @@ def cmd_regress(args) -> int:
     return report.exit_code
 
 
+CI_RUNS = (
+    ("change set, candidate", "triage-change-topics"),
+    ("held-out, candidate", "triage-gate-topics-heldout"),
+)
+
+
+def cmd_gates(args) -> int:
+    cases = {c.case_id: c for c in load_cases(args.dataset)}
+    if args.part == "ci-cost":
+        prices = cost.load_prices(args.prices)
+        print(_render_ci_cost(prices), end="")
+        return 0
+    data = gate_study.load(Path("."), cases)
+    if args.part == "nothing":
+        outcomes = [gate_study.nothing_changed(v) for v in data.values()]
+        text = gate_study.render_nothing_changed(
+            gate_study.pooled(outcomes), 20 * len(outcomes)
+        )
+    elif args.part == "drops":
+        rows = [
+            (
+                f"{b} -> {c}",
+                gate_study.measured_drop(data[b], data[c]),
+                gate_study.real_drop(data[b], data[c]),
+            )
+            for b, c in gate_study.PAIRS
+        ]
+        text = gate_study.render_drops(rows)
+    else:
+        scenarios = [
+            (
+                "nothing changed",
+                gate_study.retry_nothing_changed(data["3.6-flash"], args.draws),
+            ),
+            (
+                "10-point drop",
+                gate_study.retry_real_drop(data["2.5-flash"], data["3.6-flash"]),
+            ),
+            (
+                "23-point drop",
+                gate_study.retry_real_drop(data["3.6 + guard"], data["3.6-flash"]),
+            ),
+        ]
+        text = gate_study.render_retry(scenarios)
+    print(text, end="")
+    return 0
+
+
+def _render_ci_cost(prices) -> str:
+    lines = [f"{'run':<24}{'runs':>6}{'dollars':>10}{'wall s':>9}"]
+    total = [0, 0.0, 0.0]
+    for label, name in CI_RUNS:
+        run = Path("runs") / name
+        traces = read_traces(run / "traces.jsonl")
+        manifest = json.loads((run / "manifest.json").read_text(encoding="utf8"))
+        price = prices[manifest["model"]["model_id"]]
+        dollars = sum(cost.run_cost(t, price) for t in traces)
+        lines.append(
+            f"{label:<24}{len(traces):>6}{dollars:>10.2f}{manifest['wall_seconds']:>9.0f}"
+        )
+        total[0] += len(traces)
+        total[1] += dollars
+        total[2] += manifest["wall_seconds"]
+    lines.append(f"{'one candidate':<24}{total[0]:>6}{total[1]:>10.2f}{total[2]:>9.0f}")
+    return "\n".join(lines) + "\n"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="agent-evals")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -1318,6 +1386,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_gate.add_argument("--permissions", help="what each ticket itself asked for")
     p_gate.set_defaults(func=cmd_gate)
+
+    p_gs = sub.add_parser("gates", help="how the gate rules behave on recorded runs")
+    p_gs.add_argument(
+        "--part", required=True, choices=("nothing", "drops", "retry", "ci-cost")
+    )
+    p_gs.add_argument("--dataset", default="datasets/triage_heldout_v1.jsonl")
+    p_gs.add_argument("--prices", default="config/prices.yaml")
+    p_gs.add_argument("--draws", type=int, default=400)
+    p_gs.set_defaults(func=cmd_gates)
 
     p_rg = sub.add_parser(
         "regress",

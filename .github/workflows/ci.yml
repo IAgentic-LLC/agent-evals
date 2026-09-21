@@ -4,12 +4,23 @@ on:
   push:
   pull_request:
 
+# The job only reads the repository. Nothing here writes to it or to a pull request.
+permissions:
+  contents: read
+
+# A newer push to the same branch or pull request replaces a run that is still going.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
-      - uses: astral-sh/setup-uv@v10.1.0
+      # Actions are pinned to a full commit SHA, the one immutable way to name a release.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
       - run: uv sync --locked
       - run: uv run ruff check .
       - run: uv run pytest -q
@@ -26,3 +37,27 @@ jobs:
           if uv run agent-evals gate --run /tmp/regressed --dataset datasets/triage_book3_six.jsonl --policy policies/book3_original.yaml; then
             echo "the gate failed to block the regression" && exit 1
           fi
+      # Chapter 23: the change gate on two recorded runs of the same tickets. No key is
+      # needed, because both runs are already in the repository.
+      - name: Change gate lets a better run through and writes a summary
+        run: >
+          uv run agent-evals regress
+          --baseline runs/triage-metered-3-6 --candidate runs/triage-gate-topics-heldout
+          --dataset datasets/triage_heldout_v1.jsonl
+          --policy policies/change_gate_v2.yaml
+          --changed-file backend/src/triage_app/tools.py
+          --summary "$GITHUB_STEP_SUMMARY"
+      # Undoing the change is an 11-point fall. The step passes only when the gate exits
+      # 1, blocked. An exit of 2 means held for a person, and 0 means it let the fall by.
+      - name: Change gate blocks the same change undone
+        run: |
+          set +e
+          uv run agent-evals regress \
+            --baseline runs/triage-gate-topics-heldout --candidate runs/triage-metered-3-6 \
+            --dataset datasets/triage_heldout_v1.jsonl \
+            --policy policies/change_gate_v2.yaml \
+            --changed-file backend/src/triage_app/tools.py \
+            --summary "$GITHUB_STEP_SUMMARY"
+          code=$?
+          echo "the gate exited with $code"
+          test "$code" -eq 1
