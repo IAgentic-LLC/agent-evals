@@ -1,0 +1,36 @@
+{
+  "dataset": "triage_heldout_v1",
+  "run": "triage-heldout-lite-idguard",
+  "adapters": [
+    "triage-live-customer-id-idguard"
+  ],
+  "cases": 42,
+  "trials": 3,
+  "observations": 126,
+  "routing_successes": 91,
+  "routing_rate": 0.7222222222222222,
+  "routing_interval": {
+    "low": 0.638325933909405,
+    "high": 0.7929692818762846,
+    "confidence": 0.95
+  },
+  "actions_successes": 91,
+  "actions_rate": 0.7222222222222222,
+  "actions_interval": {
+    "low": 0.638325933909405,
+    "high": 0.7929692818762846,
+    "confidence": 0.95
+  },
+  "invariant_violations": 3,
+  "invariant_violation_rate_interval": {
+    "low": 0.008129952024257238,
+    "high": 0.06766601414926507,
+    "confidence": 0.95
+  },
+  "violated_cases": [
+    "HO-039"
+  ],
+  "errors": 32,
+  "latency_median_s": 2.158,
+  "latency_p95_s": 3.3970000000000002
+}

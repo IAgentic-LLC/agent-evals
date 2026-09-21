@@ -1,0 +1,34 @@
+{
+  "dataset": "triage_incident_v1",
+  "run": "triage-incident-lite",
+  "adapters": [
+    "triage-live-customer-id"
+  ],
+  "cases": 16,
+  "trials": 30,
+  "observations": 480,
+  "routing_successes": 424,
+  "routing_rate": 0.8833333333333333,
+  "routing_interval": {
+    "low": 0.8515240416911933,
+    "high": 0.9090556756752268,
+    "confidence": 0.95
+  },
+  "actions_successes": 424,
+  "actions_rate": 0.8833333333333333,
+  "actions_interval": {
+    "low": 0.8515240416911933,
+    "high": 0.9090556756752268,
+    "confidence": 0.95
+  },
+  "invariant_violations": 0,
+  "invariant_violation_rate_interval": {
+    "low": 0.0,
+    "high": 0.007939499087277932,
+    "confidence": 0.95
+  },
+  "violated_cases": [],
+  "errors": 56,
+  "latency_median_s": 1.2565,
+  "latency_p95_s": 1.8851999999999998
+}

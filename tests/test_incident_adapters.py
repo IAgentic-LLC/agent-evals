@@ -12,6 +12,7 @@ from triage_app.tickets import Ticket
 from agent_evals.adapters.triage import (
     ID_NOTE,
     CustomerGuardAdapter,
+    CustomerIdBothAdapter,
     CustomerIdNoteAdapter,
 )
 
@@ -86,3 +87,18 @@ def test_the_note_is_added_to_the_question_and_removed_afterwards():
     assert "Customer ID: cust-311" in text
     assert specialists._question_for is question
     assert not specialists._question_for(_ticket(), None).startswith(ID_NOTE)
+
+
+def test_both_fixes_together_add_the_note_and_refuse_another_id_and_restore_everything():
+    question = specialists._question_for
+    original = tools.ALL_TOOL_FNS["look_up_invoice"]
+    tools.ACTIONS_TAKEN.clear()
+    with CustomerIdBothAdapter():
+        text = specialists._question_for(_ticket(), None)
+        reply = json.loads(
+            tools.ALL_TOOL_FNS["look_up_invoice"]({"customer_id": "cust_42"})
+        )
+    assert text.startswith(ID_NOTE) and "error" in reply
+    assert list(tools.ACTIONS_TAKEN) == []
+    assert specialists._question_for is question
+    assert tools.ALL_TOOL_FNS["look_up_invoice"] is original

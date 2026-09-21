@@ -52,6 +52,7 @@ ADAPTERS = (
     "triage-live-customer-id-topics",
     "triage-live-customer-id-idnote",
     "triage-live-customer-id-idguard",
+    "triage-live-customer-id-idboth",
     "triage-live-customer-id-untrusted",
     "triage-live-customer-id-poisoned-runbook",
     "triage-live-customer-id-poisoned-runbook-untrusted",
@@ -87,6 +88,7 @@ def _make_adapter(name: str, replay: str | None, answer_model: str | None = None
             "triage-live-customer-id-topics": triage.RunbookTopicsAdapter,
             "triage-live-customer-id-idnote": triage.CustomerIdNoteAdapter,
             "triage-live-customer-id-idguard": triage.CustomerGuardAdapter,
+            "triage-live-customer-id-idboth": triage.CustomerIdBothAdapter,
         }
         if name not in allowed:
             raise SystemExit(f"--answer-model works with {sorted(allowed)}, not {name}")
@@ -103,6 +105,8 @@ def _make_adapter(name: str, replay: str | None, answer_model: str | None = None
         return triage.CustomerIdNoteAdapter()
     if name == "triage-live-customer-id-idguard":
         return triage.CustomerGuardAdapter()
+    if name == "triage-live-customer-id-idboth":
+        return triage.CustomerIdBothAdapter()
     if name == "triage-live-customer-id-untrusted":
         return triage.UntrustedTextAdapter()
     if name == "triage-live-customer-id-poisoned-runbook":

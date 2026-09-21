@@ -574,3 +574,29 @@ class CustomerGuardAdapter(CustomerIdAdapter):
             tools.ALL_TOOL_FNS[name] = original
         specialists._question_for = self._guard_question
         super().__exit__(*exc_info)
+
+
+class CustomerIdBothAdapter(CustomerGuardAdapter):
+    """Both fixes together: the note in the question and the check in the tools. This is
+    the version that would ship, so it is the one whose runs must be verified."""
+
+    name = "triage-live-customer-id-idboth"
+
+    def __enter__(self):
+        from triage_app import specialists
+
+        super().__enter__()
+        self._both_question = specialists._question_for
+        original = self._both_question
+
+        def with_note(ticket, context_note):
+            return ID_NOTE + original(ticket, context_note)
+
+        specialists._question_for = with_note
+        return self
+
+    def __exit__(self, *exc_info) -> None:
+        from triage_app import specialists
+
+        specialists._question_for = self._both_question
+        super().__exit__(*exc_info)
