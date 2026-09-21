@@ -30,6 +30,7 @@ from agent_evals import (
     redteam,
     regression,
     reliability,
+    reproduce,
     routing,
     tool_calls,
     trajectory,
@@ -81,18 +82,25 @@ def _answer_client(model_id: str):
     return RetryingModelClient(MeteredGeminiClient(model_id=model_id))
 
 
+def answer_model_adapters() -> dict:
+    """The adapters that take --answer-model, by name."""
+    from agent_evals.adapters import triage
+
+    return {
+        "triage-live-customer-id": triage.CustomerIdAdapter,
+        "triage-live-customer-id-stall-guard": triage.StallGuardAdapter,
+        "triage-live-customer-id-topics": triage.RunbookTopicsAdapter,
+        "triage-live-customer-id-idnote": triage.CustomerIdNoteAdapter,
+        "triage-live-customer-id-idguard": triage.CustomerGuardAdapter,
+        "triage-live-customer-id-idboth": triage.CustomerIdBothAdapter,
+    }
+
+
 def _make_adapter(name: str, replay: str | None, answer_model: str | None = None):
     from agent_evals.adapters import triage
 
     if answer_model is not None:
-        allowed = {
-            "triage-live-customer-id": triage.CustomerIdAdapter,
-            "triage-live-customer-id-stall-guard": triage.StallGuardAdapter,
-            "triage-live-customer-id-topics": triage.RunbookTopicsAdapter,
-            "triage-live-customer-id-idnote": triage.CustomerIdNoteAdapter,
-            "triage-live-customer-id-idguard": triage.CustomerGuardAdapter,
-            "triage-live-customer-id-idboth": triage.CustomerIdBothAdapter,
-        }
+        allowed = answer_model_adapters()
         if name not in allowed:
             raise SystemExit(f"--answer-model works with {sorted(allowed)}, not {name}")
         return allowed[name](client=_answer_client(answer_model))
@@ -1094,6 +1102,23 @@ def cmd_leaderboard(args) -> int:
     return 0
 
 
+def cmd_reproduce(args) -> int:
+    root = Path(".")
+    prices = cost.load_prices(root / "config/prices.yaml")
+    if args.part == "list":
+        print(reproduce.render_list(root, prices, args.match), end="")
+        return 0
+    if not args.run:
+        raise SystemExit("--part command needs --run NAME")
+    print(
+        reproduce.render_command(
+            root, args.run, prices, tuple(answer_model_adapters()), args.out
+        ),
+        end="",
+    )
+    return 0
+
+
 def cmd_online(args) -> int:
     root = Path(".")
     if args.part == "review":
@@ -1653,6 +1678,13 @@ def main(argv: list[str] | None = None) -> int:
     p_lb.add_argument("--sort", choices=("met", "cost", "p95"), default="met")
     p_lb.add_argument("--out", default="leaderboard.html")
     p_lb.set_defaults(func=cmd_leaderboard)
+
+    p_rp = sub.add_parser("reproduce", help="the command that made a recorded run")
+    p_rp.add_argument("--part", choices=("list", "command"), required=True)
+    p_rp.add_argument("--run", help="a folder name under runs/ (for command)")
+    p_rp.add_argument("--match", default="", help="only runs whose name has this text")
+    p_rp.add_argument("--out", help="where the new run is written")
+    p_rp.set_defaults(func=cmd_reproduce)
 
     p_gs = sub.add_parser("gates", help="how the gate rules behave on recorded runs")
     p_gs.add_argument(
