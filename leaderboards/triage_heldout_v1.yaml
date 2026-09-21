@@ -1,0 +1,36 @@
+# The board for the triage product on the 42 held-out tickets (chapter 26). Every run
+# listed here was offered to the board. The rules in src/agent_evals/leaderboard.py decide
+# which are admitted. A listing is not a promise that a run is on the board.
+name: Triage product on the held-out tickets
+dataset: datasets/triage_heldout_v1.jsonl
+min_trials: 3
+prices: config/prices.yaml
+entries:
+  - {run: triage-metered-2-5, label: 2.5-flash}
+  - {run: triage-metered-3-5-lite, label: 3.5-lite}
+  - {run: triage-metered-3-6, label: 3.6-flash}
+  - {run: triage-metered-3-6-guard, label: 3.6 + stall guard}
+  - {run: triage-gate-topics-heldout, label: 3.6 + topics hint}
+  - {run: triage-heldout-lite-idnote, label: 3.5-lite + note}
+  - {run: triage-heldout-lite-idguard, label: 3.5-lite + guard}
+  - {run: triage-heldout-lite-idboth, label: 3.5-lite + note + guard}
+  - {run: triage-heldout-v1, label: 3.6-flash, first try}
+  - {run: triage-heldout-v1-shipped, label: shipped prompt, first try}
+  - {run: triage-heldout-v1-calls, label: 3.6 + tool calls, first try}
+  - {run: triage-heldout-v1-topics, label: 3.6 + topics hint, first try}
+  - {run: triage-heldout-v1-leaky, label: 3.6 leaky ledger}
+  - {run: triage-change-base, label: 3.6-flash, change set}
+  - {run: triage-redteam-1, label: 3.6-flash, red team}
+  - {run: triage-live-baseline, label: Book 3 baseline}
+first_look:
+  - 2.5-flash
+  - 3.5-lite
+  - 3.6-flash
+  - 3.6 + stall guard
+  - 3.6 + topics hint
+  - 3.5-lite + note + guard
+other_sets:
+  - dataset: datasets/triage_change_v1.jsonl
+    runs:
+      3.6-flash: triage-change-base
+      3.6 + topics hint: triage-change-topics

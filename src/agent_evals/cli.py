@@ -25,6 +25,7 @@ from agent_evals import (
     judge,
     judge_report,
     labels,
+    leaderboard,
     online,
     redteam,
     regression,
@@ -1063,6 +1064,36 @@ def cmd_incident(args) -> int:
     return 0
 
 
+def cmd_leaderboard(args) -> int:
+    root = Path(".")
+    board = leaderboard.load_board(args.board)
+    rows, refused, _ = leaderboard.build(root, board)
+    if args.part == "admit":
+        print(leaderboard.render_admit(refused, rows), end="")
+    elif args.part == "board":
+        print(leaderboard.render_board(rows, args.min_met, args.sort), end="")
+    elif args.part == "ranks":
+        print(leaderboard.render_ranks(rows), end="")
+    elif args.part == "first-look":
+        print(leaderboard.render_first_look(rows, board.first_look), end="")
+    elif args.part == "versions":
+        text = leaderboard.render_versions(
+            [r for r in rows if r.label in board.first_look],
+            root,
+            "datasets/triage_heldout_v1.jsonl",
+            "datasets/triage_heldout_v2.jsonl",
+        )
+        print(text, end="")
+    elif args.part == "sets":
+        for other in board.other_sets:
+            print(leaderboard.render_sets(rows, root, other, board), end="")
+    else:
+        page = leaderboard.render_html(board, rows, refused, board.name)
+        Path(args.out).write_bytes(page.encode("utf8"))
+        print("wrote", args.out)
+    return 0
+
+
 def cmd_online(args) -> int:
     root = Path(".")
     if args.part == "review":
@@ -1608,6 +1639,20 @@ def main(argv: list[str] | None = None) -> int:
         "--incidents", default="incidents", help="the folder of INC-*.yaml records"
     )
     p_inc.set_defaults(func=cmd_incident)
+
+    p_lb = sub.add_parser("leaderboard", help="a leaderboard that refuses")
+    p_lb.add_argument(
+        "--part",
+        required=True,
+        choices=("admit", "board", "ranks", "first-look", "versions", "sets", "html"),
+    )
+    p_lb.add_argument("--board", default="leaderboards/triage_heldout_v1.yaml")
+    p_lb.add_argument(
+        "--min-met", type=float, help="show entries at or above this met%%"
+    )
+    p_lb.add_argument("--sort", choices=("met", "cost", "p95"), default="met")
+    p_lb.add_argument("--out", default="leaderboard.html")
+    p_lb.set_defaults(func=cmd_leaderboard)
 
     p_gs = sub.add_parser("gates", help="how the gate rules behave on recorded runs")
     p_gs.add_argument(
