@@ -131,17 +131,33 @@ def test_the_false_alarm_table_is_pinned_and_a_fixed_threshold_fails_at_low_traf
 
 def test_the_falls_table_is_pinned_and_a_large_fall_is_caught_on_the_first_day():
     text = _flat(_render("falls"))
-    assert "guard -> default 40 96% day 1 96% day 1 97% day 1" in text
-    assert "2.5-flash -> lite 40 73% day 2 56% day 3 88% day 3" in text
+    assert "guard -> default 40 100% day 1 100% day 1 100% day 1" in text
+    assert "2.5-flash -> lite 40 97% day 2 58% day 3 89% day 3" in text
 
 
 def test_a_change_of_mix_alarms_the_pooled_monitor_and_not_the_one_on_topic_other():
     text = _flat(_render("mix-shift"))
-    assert "all tickets 40 63% day 1 98% day 1 98% day 1" in text
-    assert "topic other 40 9% day 3 0% day - 4% day 5" in text
+    assert "all tickets 40 100% day 1 100% day 1 100% day 1" in text
+    assert "topic other 40 54% day 3 0% day - 4% day 5" in text
 
 
 def test_the_shadow_table_is_pinned():
     text = _flat(_render("shadow"))
     assert "84 97% 43% 100%" in text
     assert "168 100% 77% 100%" in text
+
+
+def test_an_alarm_before_the_change_is_a_false_alarm_and_does_not_hide_the_detection():
+    noisy = online.Population([("a", [True, False])])
+    broken = online.Population([("a", [False])])
+    found = online.detection(noisy, broken, 5, 40, seed=1)
+    assert online._within(found["threshold"], 1) == 1.0
+    early = online.false_alarms(noisy, 5, 40, seed=1)
+    assert early["threshold"] > 0.9
+
+
+def test_a_cusum_starts_again_from_zero_after_it_alarms():
+    base = _days([0.9] * 14, n=100)
+    watch = _days([0.7] * 12, n=100)
+    days = online.alarm_days("cusum", base, watch)
+    assert len(days) >= 2 and days[0] == 1 and days[1] > days[0]

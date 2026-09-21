@@ -26,6 +26,7 @@ from agent_evals.stats import wilson_interval
 MONITORS = ("threshold", "shewhart", "cusum")
 BASELINE_DAYS = 14
 MONITOR_DAYS = 30
+QUIET_DAYS = 5  # ordinary days between the baseline and the change
 SHIFT_SIGMA = 0.5  # CUSUM allowance, half the shift it is tuned to catch
 CUSUM_LIMIT = 4.0
 
@@ -77,13 +78,15 @@ def _p0(baseline: list[tuple[int, int]]) -> float:
     return min(0.98, max(0.02, k / n))
 
 
-def first_alarm(
+def alarm_days(
     monitor: str, baseline: list[tuple[int, int]], watch: list[tuple[int, int]]
-) -> int | None:
-    """The first day (counting from 1) on which the monitor alarms, or None. The
-    baseline days set the level. Each day is (runs without an error, runs)."""
+) -> list[int]:
+    """Every day (counting from 1) on which the monitor alarms. The baseline days set the
+    level. Each day is (runs without an error, runs). A CUSUM starts again from zero
+    after it alarms, as a person would reset it after looking."""
     p0 = _p0(baseline)
     s = 0.0
+    days = []
     for day, (k, n) in enumerate(watch, start=1):
         if n == 0:
             continue
@@ -96,9 +99,19 @@ def first_alarm(
         else:
             s = max(0.0, s - (p - p0) / sigma - SHIFT_SIGMA)
             hit = s > CUSUM_LIMIT
+            if hit:
+                s = 0.0
         if hit:
-            return day
-    return None
+            days.append(day)
+    return days
+
+
+def first_alarm(
+    monitor: str, baseline: list[tuple[int, int]], watch: list[tuple[int, int]]
+) -> int | None:
+    """The first day (counting from 1) on which the monitor alarms, or None."""
+    days = alarm_days(monitor, baseline, watch)
+    return days[0] if days else None
 
 
 def _observe(
@@ -141,21 +154,24 @@ def detection(
     seed: int = 0,
     stratum: str | None = None,
 ) -> dict[str, list[int | None]]:
-    """For each monitor, the day of first alarm counted from the day the stream changed
-    (None if it never alarmed), one entry per draw. An alarm before the change is a false
-    alarm, and it counts as none here, so the two are not mixed up."""
+    """For each monitor, the day of the first alarm on or after the day the stream
+    changed, counted from that day (1 is the day it changed, None if it never alarmed),
+    one entry per draw. The stream has the baseline days, then QUIET_DAYS more ordinary
+    days, then the change. Alarms in the ordinary days are false alarms. They are not
+    counted here, and `false_alarms` counts them."""
     rng = random.Random(seed)
     out: dict[str, list[int | None]] = {m: [] for m in MONITORS}
     for _ in range(draws):
-        schedule = [before] * BASELINE_DAYS + [before] * 5 + [after] * MONITOR_DAYS
+        schedule = [before] * (BASELINE_DAYS + QUIET_DAYS) + [after] * MONITOR_DAYS
         obs = stream(schedule, rng, n, stratum)
         base = obs[:BASELINE_DAYS]
         for m in MONITORS:
-            day = first_alarm(m, base, obs[BASELINE_DAYS:])
-            if day is None or day <= 5:
-                out[m].append(None)
-            else:
-                out[m].append(day - 5)
+            later = [
+                d - QUIET_DAYS
+                for d in alarm_days(m, base, obs[BASELINE_DAYS:])
+                if d > QUIET_DAYS
+            ]
+            out[m].append(later[0] if later else None)
     return out
 
 

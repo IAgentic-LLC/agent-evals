@@ -235,7 +235,7 @@ def render_invariants(
     cases: dict[str, EvalCase], conditions: list[tuple[str, str, list[Trace]]]
 ) -> str:
     """The met rate counts required actions and says nothing of what a run did wrong on
-    the way. Chapter 8's customer check asks whether every action that names a customer
+    the way. Chapter 5's customer check asks whether every action that names a customer
     names the ticket's own. This counts the runs that fail it, and lists each one."""
     lines = [f"{'condition':<19}{'runs':>6}{'wrong customer':>16}"]
     found = []
