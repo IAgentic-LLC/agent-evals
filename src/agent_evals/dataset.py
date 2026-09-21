@@ -117,6 +117,25 @@ def nearest_lexical(cases: list[EvalCase], reference: list[EvalCase]) -> list[Ne
     return out
 
 
+def within_set_pairs(cases: list[EvalCase]) -> list[tuple[float, str, str]]:
+    """Word overlap of every pair of cases in one set, most similar first."""
+    pairs = [
+        (jaccard(ticket_text(a), ticket_text(b)), a.case_id, b.case_id)
+        for i, a in enumerate(cases)
+        for b in cases[i + 1 :]
+    ]
+    return sorted(pairs, reverse=True)
+
+
+def repeated_subjects(cases: list[EvalCase]) -> dict[str, list[str]]:
+    """Subject lines used by more than one case, with the cases that use them."""
+    by_subject: dict[str, list[str]] = {}
+    for c in cases:
+        subject = str(c.input.get("subject", "")).strip().lower()
+        by_subject.setdefault(subject, []).append(c.case_id)
+    return {k: v for k, v in by_subject.items() if len(v) > 1}
+
+
 def cosine(u: list[float], v: list[float]) -> float:
     dot = sum(a * b for a, b in zip(u, v, strict=True))
     norm = math.sqrt(sum(a * a for a in u)) * math.sqrt(sum(b * b for b in v))

@@ -15,7 +15,9 @@ from agent_evals.dataset import (
     jaccard,
     near_dev_flags,
     nearest_lexical,
+    repeated_subjects,
     slice_counts,
+    within_set_pairs,
 )
 from agent_evals.runner import load_cases, read_traces
 from agent_evals.schema import EvalCase
@@ -170,3 +172,30 @@ def test_scoring_a_run_against_a_changed_dataset_says_so(capsys):
     assert "different version of the dataset" not in capsys.readouterr().out
     main([*base, "--dataset", str(V2)])
     assert "different version of the dataset" in capsys.readouterr().out
+
+
+def test_within_set_check_finds_a_planted_copy():
+    a = _case(case_id="A-1")
+    b = _case(case_id="A-2")
+    c = _case(
+        case_id="A-3",
+        input={**a.input, "subject": "Other", "body": "Unrelated words here."},
+    )
+    pairs = within_set_pairs([a, b, c])
+    assert pairs[0][1:] == ("A-1", "A-2") and pairs[0][0] == 1.0
+    assert repeated_subjects([a, b, c]) == {
+        a.input["subject"].strip().lower(): ["A-1", "A-2"]
+    }
+
+
+def test_test_set_has_no_copies_inside_it():
+    cases = load_cases(V1)
+    pairs = within_set_pairs(cases)
+    assert len(pairs) == 861
+    assert round(pairs[0][0], 2) == 0.05
+    assert repeated_subjects(cases) == {}
+
+
+def test_the_six_repeat_one_subject():
+    repeats = repeated_subjects(load_cases(SIX))
+    assert repeats == {"app crashes on startup": ["TCK-1002", "TCK-1003"]}
