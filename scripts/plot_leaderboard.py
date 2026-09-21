@@ -101,7 +101,7 @@ def frontier(out: str) -> None:
             color=RED,
         )
     ax.set_xlim(-0.5, 6.8)
-    ax.set_xlabel("dollars per success (thousandths)", fontsize=9, color=INK)
+    ax.set_xlabel("cost of a success (thousandths of a dollar)", fontsize=9, color=INK)
     ax.set_ylabel("runs meeting the required actions (%)", fontsize=9, color=INK)
     ax.set_ylim(40, 100)
     _style(ax)
