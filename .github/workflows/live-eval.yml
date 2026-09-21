@@ -5,8 +5,8 @@ name: live-eval
 # 2026-09-21, and it needs the GEMINI_API_KEY secret. So it never starts by itself: a
 # person starts it, from the Actions tab, when a change to the product needs its evals.
 #
-# The secret has not been added to this repository. Adding it, and deciding who may start
-# this workflow, are the repository owner's decisions.
+# The secret has not been added to this repository, so the job cannot run yet. Adding it
+# puts a paid key in the repository's settings, and that is a separate, deliberate step.
 on:
   workflow_dispatch:
     inputs:
