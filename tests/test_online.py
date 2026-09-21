@@ -132,13 +132,13 @@ def test_the_false_alarm_table_is_pinned_and_a_fixed_threshold_fails_at_low_traf
 def test_the_falls_table_is_pinned_and_a_large_fall_is_caught_on_the_first_day():
     text = _flat(_render("falls"))
     assert "guard -> default 40 96% day 1 96% day 1 97% day 1" in text
-    assert "2.5-flash -> lite 40 73% day 2 56% day 5 88% day 4" in text
+    assert "2.5-flash -> lite 40 73% day 2 56% day 3 88% day 3" in text
 
 
 def test_a_change_of_mix_alarms_the_pooled_monitor_and_not_the_one_on_topic_other():
     text = _flat(_render("mix-shift"))
     assert "all tickets 40 63% day 1 98% day 1 98% day 1" in text
-    assert "topic other 40 9% day 6 0% day - 4% day 12" in text
+    assert "topic other 40 9% day 3 0% day - 4% day 5" in text
 
 
 def test_the_shadow_table_is_pinned():

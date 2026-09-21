@@ -163,8 +163,9 @@ def _within(days: list[int | None], limit: int) -> float:
     return sum(d is not None and d <= limit for d in days) / len(days)
 
 
-def _median(days: list[int | None]) -> str:
-    found = sorted(d for d in days if d is not None)
+def _median(days: list[int | None], limit: int) -> str:
+    """The median day among the streams that alarmed within the limit."""
+    found = sorted(d for d in days if d is not None and d <= limit)
     return f"{found[len(found) // 2]}" if found else "-"
 
 
@@ -189,10 +190,11 @@ def render_detection(
         head += f"{m:>14}"
     lines = [head]
     for name, n, found in rows:
-        cells = "".join(
-            f"{f'{100 * _within(found[m], within):.0f}% day {_median(found[m])}':>14}"
-            for m in MONITORS
-        )
+        cells = ""
+        for m in MONITORS:
+            pct = 100 * _within(found[m], within)
+            share = "<1%" if 0 < pct < 0.5 else f"{pct:.0f}%"
+            cells += f"{f'{share} day {_median(found[m], within)}':>14}"
         lines.append(f"{name:<22}{n:>8}{cells}")
     lines.append(f"alarmed within {within} days of the change, then the median day")
     return "\n".join(lines) + "\n"
