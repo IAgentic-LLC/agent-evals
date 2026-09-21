@@ -317,3 +317,28 @@ def test_the_policy_file_loads_and_says_who_owns_the_margin():
     assert "product owner's decision" in POLICY.read_text(encoding="utf8")
     with pytest.raises(Exception):  # noqa: B017
         regression.load_policy(ROOT / "README.md")
+
+
+def test_the_detail_table_shows_where_the_change_helped_and_where_it_did_not(capsys):
+    argv = [
+        "regress",
+        "--baseline",
+        str(ROOT / "runs/triage-change-base"),
+        "--candidate",
+        str(ROOT / "runs/triage-change-topics"),
+        "--dataset",
+        str(ROOT / "datasets/triage_change_v1.jsonl"),
+        "--policy",
+        str(ROOT / "policies/change_gate_v2.yaml"),
+        "--detail",
+        "runbook_topic",
+    ]
+    assert cli.main(argv) == 0
+    out = capsys.readouterr().out
+    assert all(len(line) <= 78 for line in out.splitlines())
+    flat = " ".join(out.split())
+    assert "crash 12 47.2% 100.0% +52.8" in flat
+    assert "login 10 0.0% 6.7% +6.7" in flat
+    assert "other 18 20.4% 72.2% +51.9" in flat
+    assert "tool loop 88 33" in flat and "handoff loop 4 10" in flat
+    assert "tickets: 26 better, 0 worse, 14 same; exact sign test p < 0.001" in flat

@@ -322,6 +322,49 @@ def render(report: Report) -> str:
     return "\n".join(lines) + "\n"
 
 
+def render_detail(
+    cases: dict[str, EvalCase], base: list[Trace], cand: list[Trace], key: str
+) -> str:
+    """Where a difference is: the met share by a slice of the tickets, how the runs
+    ended, and how many tickets went each way."""
+    ids = sorted({t.case_id for t in base} & {t.case_id for t in cand})
+
+    def share(traces: list[Trace], keep: set[str]) -> float:
+        rows = [t for t in traces if t.case_id in keep]
+        return (
+            100
+            * sum(reliability.success(cases[t.case_id], t) for t in rows)
+            / len(rows)
+        )
+
+    values = sorted({cases[i].slices.get(key, "(none)") for i in ids})
+    lines = [f"{key:<14}{'tickets':>8}{'baseline':>10}{'candidate':>11}{'change':>9}"]
+    groups = [
+        (v, {i for i in ids if cases[i].slices.get(key, "(none)") == v}) for v in values
+    ]
+    for name, keep in [*groups, ("all", set(ids))]:
+        b, c = share(base, keep), share(cand, keep)
+        lines.append(f"{name:<14}{len(keep):>8}{b:>9.1f}%{c:>10.1f}%{c - b:>+9.1f}")
+    lines.append("")
+    lines.append(f"{'run ended':<14}{'baseline':>10}{'candidate':>11}")
+    for outcome in cost.OUTCOMES:
+        counts = [
+            sum(cost.outcome(cases[t.case_id], t) == outcome for t in traces)
+            for traces in (base, cand)
+        ]
+        lines.append(f"{outcome:<14}{counts[0]:>10}{counts[1]:>11}")
+    diffs = ticket_differences(cases, base, cand)
+    better = sum(d > 0 for d in diffs)
+    worse = sum(d < 0 for d in diffs)
+    p = compare.exact_sign_test(better, worse)
+    lines.append("")
+    lines.append(
+        f"tickets: {better} better, {worse} worse, {len(diffs) - better - worse} same;"
+        f" exact sign test p {'< 0.001' if p < 0.001 else f'= {p:.3f}'}"
+    )
+    return "\n".join(lines) + "\n"
+
+
 def render_markdown(report: Report) -> str:
     """The same report as a table, for a job summary."""
     rows = ["| Check | Kind | Status | Detail |", "|:--|:--|:--|:--|"]

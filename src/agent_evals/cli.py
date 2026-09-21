@@ -949,6 +949,12 @@ def cmd_regress(args) -> int:
         prices,
     )
     print(regression.render(report), end="")
+    if args.detail:
+        cases = {c.case_id: c for c in load_cases(args.dataset)}
+        base = read_traces(Path(args.baseline) / "traces.jsonl")
+        cand = read_traces(Path(args.candidate) / "traces.jsonl")
+        print()
+        print(regression.render_detail(cases, base, cand, args.detail), end="")
     if args.summary:
         with open(args.summary, "a", encoding="utf8") as f:
             f.write(regression.render_markdown(report))
@@ -1412,6 +1418,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_rg.add_argument("--prices", default="config/prices.yaml")
     p_rg.add_argument("--summary", help="append a Markdown table to this file")
+    p_rg.add_argument(
+        "--detail",
+        metavar="SLICE",
+        help="also print the met share by this slice and how the runs ended",
+    )
     p_rg.set_defaults(func=cmd_regress)
 
     args = parser.parse_args(argv)
