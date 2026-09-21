@@ -1,0 +1,28 @@
+id: INC-002
+title: >-
+  A billing ticket with no invoice on file is handed to technical and back
+found: "2026-09-21"
+chapter: 25
+evidence:
+  run: triage-incident-lite
+  case: IN-016
+  trial: 1
+what_happened: >-
+  Found while reproducing INC-001. On tickets for a customer with no
+  invoice, the billing specialist said so and handed the ticket to
+  technical, which handed it back, and the router stopped the run with a
+  handoff-loop error.
+impact: >-
+  The customer gets no answer. It does not touch another customer's data, so
+  it is a quality incident and not a safety one.
+layer: monitor
+rule: "error:HandoffLoop"
+dataset: datasets/triage_incident_v1.jsonl
+cases: [IN-005, IN-006, IN-008, IN-010, IN-016]
+status: fixed
+before: triage-incident-lite
+after: triage-incident-lite-idboth
+fix: >-
+  Not designed for. The note added for INC-001 removed it on this model in
+  480 runs, and the guard alone did not. I do not know why. The record shows
+  the loops are gone on these tickets on this model and says nothing more.

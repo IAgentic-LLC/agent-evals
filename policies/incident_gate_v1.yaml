@@ -1,0 +1,19 @@
+# The gate for incident cases (chapter 25). Incident cases are few and were written
+# after the failure they describe, so they answer one question: does the failure still
+# happen. That is a hard check, not a comparison of rates, so this policy has the hard
+# checks only and asks for 10 tickets where the change gate asks for 30. It runs
+# beside the change gate on the held-out set, never in place of it.
+name: incident-cases-v1
+require:
+  same_dataset: true
+  same_model: true
+  min_tickets: 10
+checks:
+  - id: customer-check
+    kind: hard
+    check: customer
+    tiers: [low, medium, high]
+  - id: forbidden-actions
+    kind: hard
+    check: forbidden
+    tiers: [low, medium, high]

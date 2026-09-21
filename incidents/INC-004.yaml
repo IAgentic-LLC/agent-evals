@@ -1,0 +1,24 @@
+id: INC-004
+title: The cost table left out the model's thinking tokens
+found: "2026-09-21"
+chapter: 22
+evidence:
+  run: triage-cost-3-6
+  case: HO-001
+  trial: 1
+what_happened: >-
+  The first cost table used the completion count the API reports, which does
+  not include thinking tokens. They are billed as output. Every run of the
+  first attempt lacks the count, and the table understated the cost.
+impact: A wrong cost per success would have set the wrong budget in the gate.
+layer: harness
+rule: usage-missing-thinking
+dataset: datasets/triage_heldout_v1.jsonl
+cases: []
+status: fixed
+before: triage-cost-3-6
+after: triage-metered-3-6
+fix: >-
+  A metered client that reads the thinking tokens from the response and
+  records them beside the reported counts. Chapter 22 reran every condition
+  with it.

@@ -20,6 +20,7 @@ from agent_evals import (
     forced,
     gate_study,
     grader_check,
+    incident,
     invariants,
     judge,
     judge_report,
@@ -35,6 +36,7 @@ from agent_evals import (
 )
 from agent_evals import dataset as dataset_mod
 from agent_evals import gate as gate_mod
+from agent_evals.answer_graders import acted_on_the_right_customer
 from agent_evals.manifest import build_manifest, harness_state, now
 from agent_evals.runner import (
     dump_json,
@@ -980,6 +982,89 @@ CI_RUNS = (
 )
 
 
+INCIDENT_FIXES = (
+    ("as shipped", "triage-incident-lite"),
+    ("the note", "triage-incident-lite-idnote"),
+    ("the guard", "triage-incident-lite-idguard"),
+    ("note and guard", "triage-incident-lite-idboth"),
+    ("default model, shipped", "triage-incident-default"),
+)
+INCIDENT_HELDOUT = (
+    ("as shipped", "triage-metered-3-5-lite"),
+    ("the note", "triage-heldout-lite-idnote"),
+    ("the guard", "triage-heldout-lite-idguard"),
+    ("note and guard", "triage-heldout-lite-idboth"),
+)
+QUEUE_RUNS = (
+    "triage-metered-3-6",
+    "triage-metered-3-6-guard",
+    "triage-metered-2-5",
+    "triage-metered-3-5-lite",
+)
+
+
+def cmd_incident(args) -> int:
+    root = Path(".")
+    inc_cases = {c.case_id: c for c in load_cases("datasets/triage_incident_v1.jsonl")}
+    held = {c.case_id: c for c in load_cases("datasets/triage_heldout_v1.jsonl")}
+
+    def traces(name):
+        return read_traces(root / "runs" / name / "traces.jsonl")
+
+    if args.part in ("ledger", "check"):
+        rows = [(i, incident.check(i, root)) for i in incident.load_ledger(root)]
+        if args.id:
+            rows = [r for r in rows if r[0].id == args.id]
+        print(incident.render_ledger(rows), end="")
+        for i, problems in rows:
+            for p in problems:
+                print(f"{i.id}: {p}")
+        return 1 if args.part == "check" and any(p for _, p in rows) else 0
+    if args.part == "draft":
+        inc = next(i for i in incident.load_ledger(root) if i.id == "INC-001")
+        case = incident.evidence_case(inc, root)
+        data = incident.draft_case(
+            case, inc.id, inc.evidence.run, inc.evidence.trial, "IN-001"
+        )
+        print(incident.render_draft(data), end="")
+    elif args.part == "reproduce":
+        print(
+            incident.render_reproduction(inc_cases, traces("triage-incident-lite")),
+            end="",
+        )
+    elif args.part == "fix":
+        conds = [(label, inc_cases, traces(name)) for label, name in INCIDENT_FIXES]
+        print(incident.render_fix(conds), end="")
+        print()
+        conds = [(label, held, traces(name)) for label, name in INCIDENT_HELDOUT]
+        print(incident.render_fix(conds), end="")
+    elif args.part == "reach":
+        one = [t for t in traces("triage-incident-lite") if t.case_id == "IN-001"]
+        every = traces("triage-incident-lite")
+
+        def acted(cases, rows):
+            return sum(
+                not acted_on_the_right_customer(cases[t.case_id], t) for t in rows
+            )
+
+        k1, k_all = acted(inc_cases, one), acted(inc_cases, every)
+        spread = len(one) * len(held)
+        rows = [
+            ("IN-001, 1 run", k1, len(one), 1),
+            ("IN-001, 3 runs", k1, len(one), 3),
+            ("IN-001, 30 runs", k1, len(one), 30),
+            ("incident set, 1 trial", k_all, len(every), 16),
+            ("incident set, 30 trials", k_all, len(every), 480),
+            ("held-out set, 1 trial", k1, spread, 42),
+            ("held-out set, 3 trials", k1, spread, 126),
+        ]
+        print(incident.render_reach(rows), end="")
+    else:
+        runs = [(held, traces(n)) for n in QUEUE_RUNS]
+        print(incident.render_queue(runs), end="")
+    return 0
+
+
 def cmd_online(args) -> int:
     root = Path(".")
     if args.part == "review":
@@ -1513,6 +1598,15 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_on.add_argument("--draws", type=int, default=500)
     p_on.set_defaults(func=cmd_online)
+
+    p_inc = sub.add_parser("incident", help="turn a failure someone saw into an eval")
+    p_inc.add_argument(
+        "--part",
+        required=True,
+        choices=("ledger", "check", "draft", "reproduce", "fix", "reach", "queue"),
+    )
+    p_inc.add_argument("--id", help="one incident, for ledger and check")
+    p_inc.set_defaults(func=cmd_incident)
 
     p_gs = sub.add_parser("gates", help="how the gate rules behave on recorded runs")
     p_gs.add_argument(
