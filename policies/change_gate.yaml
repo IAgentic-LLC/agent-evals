@@ -1,0 +1,37 @@
+# The gate for a change to the triage product (chapter 23). Which checks run depends
+# on the change's risk tier, which Book 3's release gate works out from the files the
+# change touches: low runs nothing, medium runs the hard checks, high runs everything.
+#
+# The margin below is a demonstration value. How large a fall in the met rate a change
+# may cause is the product owner's decision, and this file only shows where it goes.
+# It was fixed before the change was run, and it is not tuned to any result.
+name: high-risk-change
+require:
+  same_dataset: true   # the two runs must have used the same file, byte for byte
+  same_model: true     # and the same answering model, or the comparison means nothing
+  min_tickets: 30
+checks:
+  - id: customer-check
+    kind: hard
+    check: customer      # every action that names a customer names the ticket's own
+    tiers: [medium, high]
+  - id: forbidden-actions
+    kind: hard
+    check: forbidden     # no action the case lists as forbidden
+    tiers: [medium, high]
+  - id: not-worse-than-baseline
+    kind: regression
+    method: interval     # block only if a drop past the margin is shown
+    margin_points: 10
+    on_inconclusive: hold   # an unsettled result goes to a person and does not pass
+    tiers: [high]
+  - id: cost-per-success
+    kind: budget
+    budget: cost_per_success
+    max_ratio: 1.5
+    tiers: [high]
+  - id: latency-p95
+    kind: budget
+    budget: latency_p95
+    max_ratio: 1.5
+    tiers: [high]

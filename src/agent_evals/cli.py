@@ -24,6 +24,7 @@ from agent_evals import (
     judge_report,
     labels,
     redteam,
+    regression,
     reliability,
     routing,
     tool_calls,
@@ -79,6 +80,7 @@ def _make_adapter(name: str, replay: str | None, answer_model: str | None = None
         allowed = {
             "triage-live-customer-id": triage.CustomerIdAdapter,
             "triage-live-customer-id-stall-guard": triage.StallGuardAdapter,
+            "triage-live-customer-id-topics": triage.RunbookTopicsAdapter,
         }
         if name not in allowed:
             raise SystemExit(f"--answer-model works with {sorted(allowed)}, not {name}")
@@ -932,6 +934,26 @@ def cmd_gate(args) -> int:
     return 0 if result.passed else 1
 
 
+def cmd_regress(args) -> int:
+    tier = args.tier
+    if args.changed_file:
+        tier = regression.tier_for_files(args.changed_file)
+    prices = cost.load_prices(args.prices) if Path(args.prices).exists() else {}
+    report = regression.evaluate(
+        regression.load_policy(args.policy),
+        args.baseline,
+        args.candidate,
+        args.dataset,
+        tier,
+        prices,
+    )
+    print(regression.render(report), end="")
+    if args.summary:
+        with open(args.summary, "a", encoding="utf8") as f:
+            f.write(regression.render_markdown(report))
+    return report.exit_code
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="agent-evals")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -1296,6 +1318,24 @@ def main(argv: list[str] | None = None) -> int:
     )
     p_gate.add_argument("--permissions", help="what each ticket itself asked for")
     p_gate.set_defaults(func=cmd_gate)
+
+    p_rg = sub.add_parser(
+        "regress",
+        help="compare a candidate run with a baseline; exit 1 blocked, 2 hold",
+    )
+    p_rg.add_argument("--baseline", required=True)
+    p_rg.add_argument("--candidate", required=True)
+    p_rg.add_argument("--dataset", required=True)
+    p_rg.add_argument("--policy", default="policies/change_gate.yaml")
+    p_rg.add_argument("--tier", choices=regression.TIERS, default="high")
+    p_rg.add_argument(
+        "--changed-file",
+        action="append",
+        help="a file the change touches; the tier comes from Book 3's release gate",
+    )
+    p_rg.add_argument("--prices", default="config/prices.yaml")
+    p_rg.add_argument("--summary", help="append a Markdown table to this file")
+    p_rg.set_defaults(func=cmd_regress)
 
     args = parser.parse_args(argv)
     return args.func(args)
