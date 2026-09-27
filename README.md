@@ -2,6 +2,20 @@
 
 A small harness for evaluating AI agents. It grows chapter by chapter with my book *Evaluating AI Agents*, the fourth in the Production AI Agent Engineering series. This first slice is the smallest thing that shows the book's opening claim end to end, and every later chapter extends it only when an experiment needs more.
 
+## Get the book
+
+📘 [Kindle](https://www.amazon.com/dp/B0HKKN9LG7) · [Paperback](https://www.amazon.com/dp/B0HKLDCJPV)
+
+## Production AI Agent Engineering series
+
+| # | Book | Code |
+|---|---|---|
+| 1 | Agentic Systems Engineering | [Agentic-Book](https://github.com/IAgenticc/Agentic-Book) |
+| 2 | Building Reliable AI Agents | [reliable-agents-labs](https://github.com/Sebuliba-Adrian/reliable-agents-labs) |
+| 3 | Production AI Products | [triage-app](https://github.com/IAgentic-LLC/triage-app) · [pkgintel-app](https://github.com/IAgentic-LLC/pkgintel-app) · [reorder-app](https://github.com/IAgentic-LLC/reorder-app) |
+| 4 | Evaluating AI Agents | this repo |
+| 5 | Building Production Voice AI Agents | [voice-agents](https://github.com/IAgentic-LLC/voice-agents) |
+
 ## The claim it demonstrates
 
 In *Production AI Products* I tested the support-triage system against six tickets and got 6 out of 6. That result is real, and it is also weak evidence. This repository takes the same six tickets and asks what they can and cannot show.
